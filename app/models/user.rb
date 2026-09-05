@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  devise :database_authenticatable
+
   enum :role, { super_admin: 0, account_admin: 1, member: 2 }
 
   belongs_to :account, optional: true

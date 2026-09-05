@@ -1,0 +1,5 @@
+<h1>Signed in</h1>
+<p>Email: <%= Current.user.email %></p>
+<p>Role: <%= Current.user.role %></p>
+<p>Account: <%= Current.account&.company_name || "none (super_admin)" %></p>
+<%= button_to "Sign out", destroy_user_session_path, method: :delete %>
