@@ -88,5 +88,48 @@ RSpec.describe CrmRecord do
         CrmRecord.insert_all!([ base_attrs.merge(crm_id: "CRM-db-test3") ])
       }.to raise_error(ActiveRecord::RecordNotUnique)
     end
+
+    it "rejects an exact phone+email duplicate within the same account at the DB level" do
+      account = create(:account)
+      base_attrs = {
+        account_id: account.id, crm_id: "CRM-exact-1", first_name: "DB", last_name: "Test",
+        email: "exact@example.com", phone: "+13105550100", crm_created_at: Time.current,
+        created_at: Time.current, updated_at: Time.current
+      }
+      CrmRecord.insert_all!([ base_attrs ])
+
+      expect {
+        CrmRecord.insert_all!([ base_attrs.merge(crm_id: "CRM-exact-2") ])
+      }.to raise_error(ActiveRecord::RecordNotUnique)
+    end
+
+    it "allows a soft duplicate (same phone, different email) at the DB level" do
+      account = create(:account)
+      base_attrs = {
+        account_id: account.id, crm_id: "CRM-soft-1", first_name: "DB", last_name: "Test",
+        email: "one@example.com", phone: "+13105550100", crm_created_at: Time.current,
+        created_at: Time.current, updated_at: Time.current
+      }
+      CrmRecord.insert_all!([ base_attrs ])
+
+      expect {
+        CrmRecord.insert_all!([ base_attrs.merge(crm_id: "CRM-soft-2", email: "two@example.com") ])
+      }.not_to raise_error
+    end
+
+    it "allows the exact same phone+email pair across different accounts at the DB level" do
+      account_a = create(:account)
+      account_b = create(:account)
+      base_attrs = {
+        crm_id: "CRM-cross-acct", first_name: "DB", last_name: "Test",
+        email: "shared@example.com", phone: "+13105550100", crm_created_at: Time.current,
+        created_at: Time.current, updated_at: Time.current
+      }
+      CrmRecord.insert_all!([ base_attrs.merge(account_id: account_a.id) ])
+
+      expect {
+        CrmRecord.insert_all!([ base_attrs.merge(account_id: account_b.id) ])
+      }.not_to raise_error
+    end
   end
 end

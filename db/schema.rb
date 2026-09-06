@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_05_000001) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_07_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -106,6 +106,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_05_000001) do
     t.datetime "updated_at", null: false
     t.index ["account_id", "crm_id"], name: "index_crm_records_on_account_id_and_crm_id", unique: true
     t.index ["account_id", "email"], name: "index_crm_records_on_account_id_and_email"
+    t.index ["account_id", "phone", "email"], name: "index_crm_records_on_account_phone_email_exact_match", unique: true
     t.index ["account_id", "phone"], name: "index_crm_records_on_account_id_and_phone"
     t.index ["account_id"], name: "index_crm_records_on_account_id"
     t.index ["lead_id"], name: "index_crm_records_on_lead_id", unique: true
@@ -118,6 +119,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_05_000001) do
     t.jsonb "raw_response"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "detail", null: false
+    t.integer "result"
+    t.decimal "weight", precision: 6, scale: 4
     t.index ["verification_run_id", "layer_key"], name: "index_layer_results_on_verification_run_id_and_layer_key", unique: true
     t.index ["verification_run_id"], name: "index_layer_results_on_verification_run_id"
   end
@@ -173,6 +177,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_05_000001) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "enabled_modules", default: [], null: false, array: true
+    t.jsonb "compound_rules", default: [], null: false
     t.index ["consensus_policy_id", "version"], name: "index_policy_versions_on_consensus_policy_id_and_version", unique: true
     t.index ["consensus_policy_id"], name: "index_policy_versions_on_consensus_policy_id"
     t.index ["created_by_id"], name: "index_policy_versions_on_created_by_id"

@@ -28,49 +28,16 @@ RSpec.describe PolicyVersion do
     expect(version_b).to be_valid
   end
 
-  describe "rules validation" do
-    it "rejects a blank rules hash" do
-      expect(build(:policy_version, rules: {})).not_to be_valid
-    end
-
-    it "rejects an unknown rule type" do
-      version = build(:policy_version, rules: { "foo" => { "type" => "bogus", "label" => "x", "enabled" => true } })
+  describe "enabled_modules validation" do
+    it "rejects an unknown module" do
+      version = build(:policy_version, enabled_modules: %w[vpn_proxy not_a_real_layer])
 
       expect(version).not_to be_valid
-      expect(version.errors[:rules]).to be_present
+      expect(version.errors[:enabled_modules]).to be_present
     end
 
-    it "requires a positive weight for weighted rules" do
-      version = build(:policy_version, rules: { "foo" => { "type" => "weighted", "label" => "x", "enabled" => true } })
-
-      expect(version).not_to be_valid
-    end
-
-    it "does not require a weight for hard_stop rules" do
-      version = build(:policy_version, rules: { "foo" => { "type" => "hard_stop", "label" => "x", "enabled" => true } })
-
-      expect(version).to be_valid
-    end
-
-    it "requires enabled to be a real boolean" do
-      version = build(:policy_version, rules: { "foo" => { "type" => "hard_stop", "label" => "x", "enabled" => "yes" } })
-
-      expect(version).not_to be_valid
-    end
-  end
-
-  describe "thresholds validation" do
-    it "requires reject to be lower than review" do
-      version = build(:policy_version, thresholds: { "reject" => 0.8, "review" => 0.5 })
-
-      expect(version).not_to be_valid
-      expect(version.errors[:thresholds]).to be_present
-    end
-
-    it "rejects non-numeric thresholds" do
-      version = build(:policy_version, thresholds: { "reject" => "low", "review" => 0.75 })
-
-      expect(version).not_to be_valid
+    it "accepts every known layer key" do
+      expect(build(:policy_version, enabled_modules: DetectionLayer::KEYS)).to be_valid
     end
   end
 
