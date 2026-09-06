@@ -4,7 +4,7 @@ RSpec.describe Verification::RunLayer do
   let(:global_policy) { ConsensusPolicy.find_by(account: nil) || create(:consensus_policy, account: nil) }
 
   def policy_with(rules)
-    create(:policy_version, consensus_policy: global_policy, rules: rules, enabled_modules: rules.keys)
+    create(:policy_version, consensus_policy: global_policy, rules: rules)
   end
 
   def run_for(lead_id, rules:, layer_key:)
@@ -383,7 +383,7 @@ RSpec.describe Verification::RunLayer do
       # none of its raw fields (rule_ids, invalid_traffic_type) have anywhere
       # to be looked up, so everything falls into the unrecognized-signal path.
       unrelated_rules = { "vpn_proxy" => { "is_vpn" => { "type" => "weighted", "weight" => 0.2, "label" => "VPN", "enabled" => true } } }
-      policy = create(:policy_version, consensus_policy: global_policy, rules: unrelated_rules, enabled_modules: [ "anura" ])
+      policy = create(:policy_version, consensus_policy: global_policy, rules: unrelated_rules)
       lead = create(:lead, lead_id: "L-1002")
       run = create(:verification_run, lead: lead, policy_version: policy)
 

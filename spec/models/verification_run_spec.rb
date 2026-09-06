@@ -68,6 +68,19 @@ RSpec.describe VerificationRun do
     end
   end
 
+  describe "enabled_modules_snapshot validation" do
+    it "rejects an unknown module" do
+      run = build(:verification_run, enabled_modules_snapshot: %w[vpn_proxy not_a_real_layer])
+
+      expect(run).not_to be_valid
+      expect(run.errors[:enabled_modules_snapshot]).to be_present
+    end
+
+    it "accepts every known layer key" do
+      expect(build(:verification_run, enabled_modules_snapshot: DetectionLayer::KEYS)).to be_valid
+    end
+  end
+
   it "prevents destroying a lead that still has a verification run" do
     lead = create(:lead)
     create(:verification_run, lead: lead)

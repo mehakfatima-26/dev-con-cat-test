@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_07_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_07_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -177,7 +177,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_07_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "enabled_modules", default: [], null: false, array: true
     t.jsonb "compound_rules", default: [], null: false
     t.index ["consensus_policy_id", "version"], name: "index_policy_versions_on_consensus_policy_id_and_version", unique: true
     t.index ["consensus_policy_id"], name: "index_policy_versions_on_consensus_policy_id"
@@ -213,6 +212,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_07_000000) do
     t.datetime "finished_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "enabled_modules_snapshot", default: [], null: false, array: true
     t.index ["lead_id"], name: "index_verification_runs_on_lead_id", unique: true
     t.index ["policy_version_id"], name: "index_verification_runs_on_policy_version_id"
     t.check_constraint "(status = ANY (ARRAY[2, 3])) AND verdict IS NOT NULL OR (status = ANY (ARRAY[0, 1])) AND verdict IS NULL", name: "verification_runs_verdict_matches_status"

@@ -14,8 +14,14 @@ class VerificationRun < ApplicationRecord
   validates :started_at, presence: true
   validate :verdict_matches_status
   validate :policy_matches_lead_account
+  validate :enabled_modules_snapshot_are_known_layers
 
   private
+
+  def enabled_modules_snapshot_are_known_layers
+    unknown = enabled_modules_snapshot.to_a - DetectionLayer::KEYS
+    errors.add(:enabled_modules_snapshot, "contains unknown module(s): #{unknown.join(', ')}") if unknown.any?
+  end
 
   def verdict_matches_status
     finished = status.in?(%w[completed partial])

@@ -5,6 +5,7 @@ FactoryBot.define do
     policy_version { create(:policy_version, consensus_policy: ConsensusPolicy.find_by(account: nil) || create(:consensus_policy, account: nil)) }
     status { :pending }
     started_at { Time.current }
+    enabled_modules_snapshot { DetectionLayer::KEYS }
 
     trait :completed do
       status { :completed }

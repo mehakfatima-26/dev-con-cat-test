@@ -28,19 +28,6 @@ RSpec.describe PolicyVersion do
     expect(version_b).to be_valid
   end
 
-  describe "enabled_modules validation" do
-    it "rejects an unknown module" do
-      version = build(:policy_version, enabled_modules: %w[vpn_proxy not_a_real_layer])
-
-      expect(version).not_to be_valid
-      expect(version.errors[:enabled_modules]).to be_present
-    end
-
-    it "accepts every known layer key" do
-      expect(build(:policy_version, enabled_modules: DetectionLayer::KEYS)).to be_valid
-    end
-  end
-
   it "is immutable once created" do
     version = create(:policy_version)
 

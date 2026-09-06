@@ -47,6 +47,10 @@ module Layers
       end
     end
 
+    def max_weight
+      rules["max_weight"] || Float::INFINITY
+    end
+
     def evaluate_weighted(matched_signals)
       weight = 0.0
 
@@ -61,7 +65,7 @@ module Layers
         end
       end
 
-      warn_result(descriptions.join("; "), weight)
+      warn_result(descriptions.join("; "), [ weight, max_weight ].min)
     end
   end
 end

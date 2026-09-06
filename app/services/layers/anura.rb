@@ -32,7 +32,11 @@ module Layers
 
       descriptions = [ "Anura result: #{fixture['result']}, no configured signal explains it" ] if descriptions.empty?
 
-      warn_result(descriptions.join("; "), weight)
+      warn_result(descriptions.join("; "), [ weight, max_weight ].min)
+    end
+
+    def max_weight
+      rules["max_weight"] || Float::INFINITY
     end
   end
 end

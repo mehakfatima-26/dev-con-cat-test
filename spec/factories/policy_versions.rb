@@ -2,7 +2,6 @@ FactoryBot.define do
   factory :policy_version do
     consensus_policy { create(:consensus_policy, account: create(:account)) }
     sequence(:version)
-    enabled_modules { %w[vpn_proxy anura duplicate_detection email_validation blacklist_alliance] }
     rules do
       {
         "duplicate_detection" => {
