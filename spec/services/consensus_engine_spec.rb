@@ -136,7 +136,7 @@ RSpec.describe ConsensusEngine do
   end
 
   describe "the 12 seed leads, run through the real adapters against the real fixtures" do
-    RULES = {
+    let(:rules) { {
       "vpn_proxy" => {
         "weighted" => {
           "tor_exit" => { "weight" => 0.35, "label" => "Tor exit node detected" },
@@ -199,9 +199,9 @@ RSpec.describe ConsensusEngine do
         }
       },
       "voice" => { "hard_stop" => { "verdict" => [ "human_reused_actor", "synthetic" ] } }
-    }.freeze
+    } }
 
-    THRESHOLDS = { "reject" => 0.4, "review" => 0.9 }.freeze
+    let(:thresholds) { { "reject" => 0.4, "review" => 0.9 } }
 
     let(:solarpro) { create(:account, enabled_modules: %w[anura trustedform dnc blacklist_alliance phone_validation email_validation vpn_proxy enrichment duplicate_detection]) }
     let(:medicareedge) do
@@ -223,7 +223,7 @@ RSpec.describe ConsensusEngine do
     end
 
     def run_layer_locally(lead, key)
-      outcome = "Layers::#{key.camelize}".constantize.new(lead, RULES[key] || {}).call
+      outcome = "Layers::#{key.camelize}".constantize.new(lead, rules[key] || {}).call
 
       if outcome[:not_applicable]
         build(:layer_result, layer_key: key, state: :not_applicable, result: nil, weight: nil, detail: outcome[:detail])
@@ -234,7 +234,7 @@ RSpec.describe ConsensusEngine do
 
     def verdict_for(lead, account)
       rows = account.enabled_modules.map { |key| run_layer_locally(lead, key) }
-      described_class.call(layer_results: rows, policy_version: build(:policy_version, thresholds: THRESHOLDS))
+      described_class.call(layer_results: rows, policy_version: build(:policy_version, thresholds: thresholds))
     end
 
     it "L-1001: clean lead, no signals at all -- accept" do

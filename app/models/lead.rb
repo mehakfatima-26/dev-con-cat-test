@@ -1,6 +1,7 @@
 class Lead < ApplicationRecord
   URL_FORMAT = URI::DEFAULT_PARSER.make_regexp(%w[http https])
   PHONE_FORMAT = /\A\+[1-9]\d{6,14}\z/
+  EMAIL_FORMAT = /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/
 
   belongs_to :account
   belongs_to :pixel
@@ -10,7 +11,7 @@ class Lead < ApplicationRecord
 
   validates :lead_id, presence: true, uniqueness: true
   validates :first_name, :last_name, presence: true
-  validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :email, presence: true, format: { with: EMAIL_FORMAT }
   validates :phone, presence: true, format: { with: PHONE_FORMAT }
   validates :ip_address, presence: true
   validates :landing_page_url, presence: true, format: { with: URL_FORMAT }
