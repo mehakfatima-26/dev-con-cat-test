@@ -9,6 +9,18 @@ class Certificate < ApplicationRecord
   validates :incomplete_reason, presence: true, if: :incomplete?
   before_update :reject_update
 
+  def self.canonical_json(value)
+    case value
+    when Hash
+      pairs = value.keys.sort_by(&:to_s).map { |k| "#{k.to_s.to_json}:#{canonical_json(value[k])}" }
+      "{#{pairs.join(',')}}"
+    when Array
+      "[#{value.map { |v| canonical_json(v) }.join(',')}]"
+    else
+      value.to_json
+    end
+  end
+
   private
 
   def reject_update

@@ -4,7 +4,11 @@ module Verification
 
     def perform(verification_run_id)
       run = VerificationRun.find(verification_run_id)
-      return if run.status.in?(%w[completed partial])
+
+      if run.status.in?(%w[completed partial])
+        Certificates::Issuer.call(run) if run.certificate.blank?
+        return
+      end
 
       run.update!(status: :running) if run.pending?
       starved = dispatch_all(run)
@@ -63,6 +67,8 @@ module Verification
         finished_at: Time.current,
         credits_charged: run.credit_transactions.sum(:amount).abs
       )
+
+      Certificates::Issuer.call(run)
 
       create_crm_record(run) if run.accept_verdict?
     end

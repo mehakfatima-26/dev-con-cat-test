@@ -1,0 +1,94 @@
+<% content_for :title, "Certificate #{@certificate.serial}" %>
+
+<div style="max-width: 720px; margin: 40px auto; font-family: sans-serif; line-height: 1.5;">
+  <% if @check[:valid] %>
+    <div style="background: #e6f4ea; color: #1e7e34; padding: 14px 18px; border-radius: 8px; font-weight: bold;">
+      ✅ VALID -- this certificate's content, signature, and chain link all check out.
+    </div>
+  <% else %>
+    <div style="background: #fbe9e7; color: #b71c1c; padding: 14px 18px; border-radius: 8px; font-weight: bold;">
+      ⚠️ INVALID -- this certificate does NOT check out. Do not trust its contents.
+      <ul>
+        <% unless @check[:payload_valid] %><li>The stored content doesn't match its own fingerprint -- it has been edited since it was issued.</li><% end %>
+        <% unless @check[:signature_valid] %><li>The signature doesn't match -- this certificate was not produced by us, or its hashes were altered.</li><% end %>
+        <% unless @check[:chain_valid] %><li>Its link to the previous certificate for this account is broken -- something was reordered or removed from the chain.</li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @certificate.incomplete? %>
+    <div style="background: #fff8e1; color: #8a6d00; padding: 10px 16px; border-radius: 8px; margin-top: 12px;">
+      ℹ️ Incomplete run: <%= @certificate.incomplete_reason %>
+    </div>
+  <% end %>
+
+  <h1 style="margin-top: 28px;">Certificate <%= @certificate.serial %></h1>
+  <p style="color: #666;">
+    Consent captured <%= @certificate.payload["captured_at"] %><br>
+    Certificate issued <%= @certificate.issued_at.iso8601 %>
+    <% if @certificate.payload["landing_page_url"].present? %>
+      <br>Captured on: <a href="<%= @certificate.payload["landing_page_url"] %>"><%= @certificate.payload["landing_page_url"] %></a>
+    <% end %>
+  </p>
+
+  <h2>Verdict</h2>
+  <p>
+    <strong><%= @certificate.payload["verdict"]&.upcase %></strong>
+    &middot; Score <%= (@certificate.payload["score"] * 100).round %>%
+    &middot; <%= @certificate.payload["verdict_reason"] %>
+  </p>
+
+  <% if @certificate.payload["reasons"].present? %>
+    <ul>
+      <% @certificate.payload["reasons"].each do |reason| %>
+        <li><%= reason %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <h2>What was checked</h2>
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+        <th style="padding: 6px;">Layer</th>
+        <th style="padding: 6px;">State</th>
+        <th style="padding: 6px;">Result</th>
+        <th style="padding: 6px;">Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @certificate.payload["layers"].each do |layer| %>
+        <tr style="border-bottom: 1px solid #eee;">
+          <td style="padding: 6px;"><%= layer_label(layer["layer_key"]) %></td>
+          <td style="padding: 6px;"><%= layer["state"].to_s.titleize %></td>
+          <td style="padding: 6px;"><%= layer["result"] ? layer["result"].to_s.titleize : "–" %></td>
+          <td style="padding: 6px; color: #555;"><%= layer["detail"] %></td>
+        </tr>
+      <% end %>
+      <% (@certificate.payload["not_enabled_layers"] || []).each do |layer_key| %>
+        <tr style="border-bottom: 1px solid #eee; color: #999;">
+          <td style="padding: 6px;"><%= layer_label(layer_key) %></td>
+          <td style="padding: 6px;">Not Enabled</td>
+          <td style="padding: 6px;">–</td>
+          <td style="padding: 6px;">Not enabled for this account -- never run, never charged</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top: 24px;">Consent</h2>
+  <p>
+    TrustedForm reference:
+    <% if @certificate.payload["trusted_form_cert_url"].present? %>
+      <a href="<%= @certificate.payload["trusted_form_cert_url"] %>"><%= @certificate.payload["trusted_form_cert_url"] %></a>
+    <% else %>
+      None on file
+    <% end %>
+  </p>
+
+  <p style="color: #999; font-size: 13px; margin-top: 32px;">
+    Fingerprint: <%= @certificate.payload_sha256 %><br>
+    Previous certificate's fingerprint: <%= @certificate.prev_sha256 || "(none -- first certificate for this account)" %><br>
+    Credits charged for this check: <%= @certificate.payload["credits_charged"] %>
+  </p>
+</div>
