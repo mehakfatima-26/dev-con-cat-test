@@ -6,5 +6,13 @@ Rails.application.routes.draw do
     root to: "dashboard#show"
   end
 
+  namespace :api do
+    namespace :pixel do
+      post "visit", to: "capture_sessions#create"
+      post "leads", to: "leads#create"
+      get "leads/:lead_id/activity", to: "activities#show", as: :lead_activity
+    end
+  end
+
   get "up" => "rails/health#show", as: :rails_health_check
 end

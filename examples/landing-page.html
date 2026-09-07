@@ -16,7 +16,11 @@
               data-pixel-id="px_9f2a01"
               data-endpoint="https://your-rails-app.example/api/pixel"></script>
     -->
-    <script src="./super-pixel.js" data-pixel-id="px_9f2a01"></script>
+    <script
+      src="./super-pixel.js"
+      data-pixel-id="px_9f2a01"
+      data-endpoint="http://localhost:3000/api/pixel"
+    ></script>
 
     <style>
       :root {
@@ -115,6 +119,15 @@
         font-weight: 800; font-size: 18px; letter-spacing: .03em; display: none;
       }
       .empty { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; }
+      .notice {
+        padding: 9px 12px;
+        border-radius: 9px;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--warn);
+        font-size: 12.5px;
+        line-height: 1.4;
+      }
       code { background: #0e1728; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); font-size: 12px; }
     </style>
   </head>
@@ -218,6 +231,15 @@
         feed.scrollTop = feed.scrollHeight;
       }
 
+      function addNotice(text) {
+        if (empty) { empty.remove(); empty = null; }
+        var el = document.createElement("div");
+        el.className = "notice";
+        el.textContent = text;
+        feed.appendChild(el);
+        feed.scrollTop = feed.scrollHeight;
+      }
+
       if (window.SuperPixel) {
         window.SuperPixel.onActivity(function (evt) {
           switch (evt.type) {
@@ -233,6 +255,11 @@
               addRow("consensus", "info", "Lead submitted — running detection layers…");
               live.innerHTML = "<b>verifying…</b>";
               break;
+            case "prior_attempts":
+              addNotice(
+                "Already submitted " + evt.count + " time(s) before and never accepted — this is a fresh check and will be charged again."
+              );
+              break;
             case "layer_result":
               addRow(evt.layer, evt.verdict, evt.detail);
               break;
@@ -241,13 +268,23 @@
               break;
             case "final_verdict":
               finalEl.style.display = "block";
-              var pass = evt.verdict === "ACCEPT";
-              finalEl.style.background = pass ? "rgba(34,197,94,.15)" : "rgba(239,68,68,.15)";
-              finalEl.style.color = pass ? "var(--pass)" : "var(--fail)";
+              var verdict = (evt.verdict || "").toUpperCase();
+              var tone =
+                verdict === "ACCEPT" ? "pass" : verdict === "REVIEW" ? "warn" : "fail";
+              var toneBg = {
+                pass: "rgba(34,197,94,.15)",
+                warn: "rgba(245,158,11,.15)",
+                fail: "rgba(239,68,68,.15)",
+              }[tone];
+              finalEl.style.background = toneBg;
+              finalEl.style.color = "var(--" + tone + ")";
               finalEl.textContent =
-                evt.verdict + "  ·  score " + Math.round((evt.score || 0) * 100) + "%";
+                verdict + "  ·  score " + Math.round((evt.score || 0) * 100) + "%";
+              if (evt.reasons && evt.reasons.length) {
+                addRow("consensus", tone, evt.reasons.join("; "));
+              }
               live.textContent = "done";
-              dot.style.background = pass ? "var(--pass)" : "var(--fail)";
+              dot.style.background = "var(--" + tone + ")";
               break;
           }
         });

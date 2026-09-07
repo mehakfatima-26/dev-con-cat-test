@@ -6,8 +6,11 @@ class Lead < ApplicationRecord
   belongs_to :account
   belongs_to :pixel
   belongs_to :capture_session, optional: true
-  has_one :verification_run, dependent: :restrict_with_error
-  has_one :certificate, through: :verification_run
+  has_many :verification_runs, dependent: :restrict_with_error
+
+  def verification_run
+    verification_runs.order(created_at: :desc).first
+  end
 
   validates :lead_id, presence: true, uniqueness: true
   validates :first_name, :last_name, presence: true

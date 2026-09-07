@@ -85,20 +85,6 @@ RSpec.describe Lead do
     expect(pixel.errors[:base]).to be_present
   end
 
-  it "reaches its certificate in one hop, with no stored lead_id on Certificate" do
-    lead = create(:lead)
-    run = create(:verification_run, :completed, lead: lead)
-    cert = create(:certificate, verification_run: run)
-
-    expect(lead.certificate).to eq(cert)
-  end
-
-  it "has no certificate when none has been issued yet" do
-    lead = create(:lead)
-
-    expect(lead.certificate).to be_nil
-  end
-
   describe "database-level constraints (bypassing model validations)" do
     let(:pixel) { create(:pixel) }
     let(:base_attrs) do

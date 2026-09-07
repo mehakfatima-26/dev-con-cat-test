@@ -118,12 +118,11 @@ RSpec.describe VerificationRun do
       }.to raise_error(ActiveRecord::StatementInvalid, /verification_runs_verdict_matches_status/)
     end
 
-    it "rejects a second run for the same lead at the DB level" do
+    it "allows a second run for the same lead - a genuine resubmission gets its own fresh run (for duplicate cases)" do
       VerificationRun.insert_all!([ base_attrs ])
 
-      expect {
-        VerificationRun.insert_all!([ base_attrs ])
-      }.to raise_error(ActiveRecord::RecordNotUnique)
+      expect { VerificationRun.insert_all!([ base_attrs ]) }.not_to raise_error
+      expect(VerificationRun.where(lead_id: lead.id).count).to eq(2)
     end
   end
 end

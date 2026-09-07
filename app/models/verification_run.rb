@@ -16,7 +16,15 @@ class VerificationRun < ApplicationRecord
   validate :policy_matches_lead_account
   validate :enabled_modules_snapshot_are_known_layers
 
+  after_commit :publish_final_verdict, on: :update
+
   private
+
+  def publish_final_verdict
+    return unless saved_change_to_status? && status.in?(%w[completed partial])
+
+    Verification::ActivityPublisher.publish_final_verdict(self)
+  end
 
   def enabled_modules_snapshot_are_known_layers
     unknown = enabled_modules_snapshot.to_a - DetectionLayer::KEYS

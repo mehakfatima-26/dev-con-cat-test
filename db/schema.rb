@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_07_020000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_07_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -213,7 +213,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_07_020000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "enabled_modules_snapshot", default: [], null: false, array: true
-    t.index ["lead_id"], name: "index_verification_runs_on_lead_id", unique: true
+    t.index ["lead_id"], name: "index_verification_runs_on_lead_id"
     t.index ["policy_version_id"], name: "index_verification_runs_on_policy_version_id"
     t.check_constraint "(status = ANY (ARRAY[2, 3])) AND verdict IS NOT NULL OR (status = ANY (ARRAY[0, 1])) AND verdict IS NULL", name: "verification_runs_verdict_matches_status"
     t.check_constraint "credits_charged >= 0", name: "verification_runs_credits_charged_non_negative"

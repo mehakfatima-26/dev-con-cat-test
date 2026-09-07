@@ -2,6 +2,10 @@ module Layers
   class DuplicateDetection < Base
     KEY = "duplicate_detection"
 
+    def self.exact_match(account:, phone:, email:)
+      account.crm_records.find_by(phone: phone, email: email)
+    end
+
     def call
       return fail_result("Exact duplicate of existing CRM record #{exact_match.crm_id}") if exact_match
 

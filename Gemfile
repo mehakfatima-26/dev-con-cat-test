@@ -14,12 +14,14 @@ gem "bootsnap", require: false
 gem "devise"       
 gem "pundit"       
 gem "sidekiq"      
-gem "rack-attack"  
+gem "rack-attack"
+gem "rack-cors"
 
 group :development, :test do
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "brakeman", require: false
+  gem "byebug"
   gem "rubocop-rails-omakase", require: false
+  gem "dotenv-rails"
 
   gem "rspec-rails"
   gem "factory_bot_rails"

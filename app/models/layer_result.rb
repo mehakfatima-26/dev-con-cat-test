@@ -9,4 +9,12 @@ class LayerResult < ApplicationRecord
   validates :detail, presence: true
   validates :result, presence: true, if: :completed?
   validates :result, absence: true, unless: :completed?
+
+  after_commit :publish_activity, on: %i[create update]
+
+  private
+
+  def publish_activity
+    Verification::ActivityPublisher.publish_layer_result(self)
+  end
 end

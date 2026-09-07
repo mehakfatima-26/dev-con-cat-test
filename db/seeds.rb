@@ -48,23 +48,24 @@ end
 # ---------------------------------------------------------------------------
 puts "\n== Users =="
 
-User.find_or_create_by!(email: "admin@catchingconsent.example") do |u|
-  u.user_id = "u_super_admin"
-  u.name = "Platform Admin"
-  u.role = :super_admin
-  u.account = nil
-  u.password = DEV_PASSWORD
-end
+DEV_PASSWORD = ENV.fetch("SEED_USER_PASSWORD") { SecureRandom.hex(8) }
+admin = User.find_or_initialize_by(email: "admin@catchingconsent.example")
+admin.user_id ||= "u_super_admin"
+admin.name = "Platform Admin"
+admin.role = :super_admin
+admin.account = nil
+admin.password = DEV_PASSWORD
+admin.save!
 puts "  admin@catchingconsent.example (super_admin, password: #{DEV_PASSWORD})"
 
 accounts.each_value do |account|
-  user = User.find_or_create_by!(email: account.billing_contact) do |u|
-    u.user_id = "u_#{account.account_id}"
-    u.name = "#{account.company_name} Admin"
-    u.role = :account_admin
-    u.account = account
-    u.password = DEV_PASSWORD
-  end
+  user = User.find_or_initialize_by(email: account.billing_contact)
+  user.user_id ||= "u_#{account.account_id}"
+  user.name = "#{account.company_name} Admin"
+  user.role = :account_admin
+  user.account = account
+  user.password = DEV_PASSWORD
+  user.save!
   puts "  #{user.email} (account_admin, #{account.account_id})"
 end
 
@@ -75,19 +76,22 @@ puts "\n== Pixels =="
 
 PIXEL_IDS = { "acct_solarpro" => "px_9f2a01", "acct_medicareedge" => "px_3b7c22", "acct_autoinsure" => "px_7d51f0" }.freeze
 
+DEMO_ORIGIN = ENV["DEMO_PIXEL_ORIGIN"]
+puts "  (DEMO_PIXEL_ORIGIN not set -- pixels will only allow their production origin)" if DEMO_ORIGIN.blank?
+
 pixels = accounts.each_with_object({}) do |(account_id, account), memo|
-  pixel = Pixel.find_or_create_by!(pixel_id: PIXEL_IDS.fetch(account_id)) do |p|
-    p.account = account
-    p.name = "#{account.company_name} Landing Page"
-    p.signing_secret = SecureRandom.hex(20)
-    p.allowed_origins = [ ACCOUNTS.fetch(account_id)[:origin] ]
-  end
+  pixel = Pixel.find_or_initialize_by(pixel_id: PIXEL_IDS.fetch(account_id))
+  pixel.account = account
+  pixel.name = "#{account.company_name} Landing Page"
+  pixel.signing_secret ||= SecureRandom.hex(20)
+  pixel.allowed_origins = [ ACCOUNTS.fetch(account_id)[:origin], DEMO_ORIGIN ].compact.uniq
+  pixel.save!
   memo[account_id] = pixel
   puts "  #{pixel.pixel_id} -> #{account_id}"
 end
 
 # ---------------------------------------------------------------------------
-# Global default consensus policy - the exact rules/thresholds already
+# Global default consensus policy -- the exact rules/thresholds already
 # proven against all 12 leads in spec/services/consensus_engine_spec.rb
 # ---------------------------------------------------------------------------
 puts "\n== Consensus policy =="
@@ -170,39 +174,6 @@ if global_policy.active_policy_version.nil?
   puts "  Created global default policy, version 1 (#{DetectionLayer::KEYS.size - DEFAULT_RULES.size} layer(s) with no rules configured: #{DetectionLayer::KEYS - DEFAULT_RULES.keys})"
 else
   puts "  Global default policy already active (version #{global_policy.active_policy_version.version})"
-end
-
-# ---------------------------------------------------------------------------
-# CRM records -- pre-existing records each account already had, from buyers_crm.json
-# ---------------------------------------------------------------------------
-puts "\n== CRM records =="
-
-CRM_RECORDS = {
-  "acct_solarpro" => [
-    { crm_id: "SP-40021", first_name: "Alan", last_name: "Reyes", email: "alan.reyes@gmail.com", phone: "+13105550111", crm_created_at: "2026-05-11T10:00:00Z" },
-    { crm_id: "SP-40088", first_name: "Maria", last_name: "Gonzalez", email: "maria.g.old@yahoo.com", phone: "+13105550999", crm_created_at: "2026-06-02T12:30:00Z" }
-  ],
-  "acct_medicareedge" => [
-    { crm_id: "ME-88213", first_name: "Patricia", last_name: "Nguyen", email: "patricia.nguyen@gmail.com", phone: "+17135550173", crm_created_at: "2026-06-28T09:15:00Z" },
-    { crm_id: "ME-88410", first_name: "Howard", last_name: "Kim", email: "howard.kim@gmail.com", phone: "+17135550100", crm_created_at: "2026-07-01T14:45:00Z" }
-  ],
-  "acct_autoinsure" => [
-    { crm_id: "AI-55019", first_name: "Emily", last_name: "Watson", email: "emily.watson.personal@gmail.com", phone: "+16465550193", crm_created_at: "2026-07-19T22:05:00Z" }
-  ]
-}.freeze
-
-CRM_RECORDS.each do |account_id, records|
-  account = accounts.fetch(account_id)
-  records.each do |attrs|
-    CrmRecord.find_or_create_by!(account: account, crm_id: attrs[:crm_id]) do |r|
-      r.first_name = attrs[:first_name]
-      r.last_name = attrs[:last_name]
-      r.email = attrs[:email]
-      r.phone = attrs[:phone]
-      r.crm_created_at = attrs[:crm_created_at]
-    end
-  end
-  puts "  #{account_id}: #{records.size} pre-existing record(s)"
 end
 
 # ---------------------------------------------------------------------------
