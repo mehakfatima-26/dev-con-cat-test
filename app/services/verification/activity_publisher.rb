@@ -1,8 +1,4 @@
 module Verification
-  # One channel per lead. Publishing (from RunLayersJob's process, via model
-  # callbacks below) and subscribing (from the SSE controller, in a
-  # different process) only share Redis -- this is the pub/sub bridge
-  # between them, replacing a DB-polling loop with a true push.
   class ActivityPublisher
     REDIS_URL = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
 
@@ -16,8 +12,9 @@ module Verification
         verdict: layer_result.result || layer_result.state, detail: layer_result.detail)
     end
 
-    def self.publish_final_verdict(run)
-      publish(run.lead, type: "final_verdict", verdict: run.verdict, score: run.score, reasons: run.reasons)
+    def self.publish_final_verdict(run, certificate)
+      publish(run.lead, type: "final_verdict", verdict: run.verdict, score: run.score, reasons: run.reasons,
+        certificate_serial: certificate&.serial)
     end
 
     def self.publish(lead, payload)

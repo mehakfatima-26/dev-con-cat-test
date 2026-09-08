@@ -6,7 +6,10 @@ module Verification
       run = VerificationRun.find(verification_run_id)
 
       if run.status.in?(%w[completed partial])
-        Certificates::Issuer.call(run) if run.certificate.blank?
+        if run.certificate.blank?
+          certificate = Certificates::Issuer.call(run)
+          Verification::ActivityPublisher.publish_final_verdict(run, certificate)
+        end
         return
       end
 
@@ -68,7 +71,8 @@ module Verification
         credits_charged: run.credit_transactions.sum(:amount).abs
       )
 
-      Certificates::Issuer.call(run)
+      certificate = Certificates::Issuer.call(run)
+      Verification::ActivityPublisher.publish_final_verdict(run, certificate)
 
       create_crm_record(run) if run.accept_verdict?
     end

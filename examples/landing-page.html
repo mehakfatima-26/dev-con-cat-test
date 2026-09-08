@@ -280,6 +280,18 @@
               finalEl.style.color = "var(--" + tone + ")";
               finalEl.textContent =
                 verdict + "  ·  score " + Math.round((evt.score || 0) * 100) + "%";
+              if (evt.certificateSerial) {
+                var certLink = document.createElement("a");
+                certLink.href = "/verify/" + encodeURIComponent(evt.certificateSerial);
+                certLink.target = "_blank";
+                certLink.textContent = "View certificate";
+                certLink.style.display = "block";
+                certLink.style.marginTop = "6px";
+                certLink.style.fontSize = "13px";
+                certLink.style.color = "inherit";
+                certLink.style.textDecoration = "underline";
+                finalEl.appendChild(certLink);
+              }
               if (evt.reasons && evt.reasons.length) {
                 addRow("consensus", tone, evt.reasons.join("; "));
               }

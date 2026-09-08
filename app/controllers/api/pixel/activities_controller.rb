@@ -61,7 +61,8 @@ module Api
           write_event("layer_result", layer: event["layer"], verdict: event["verdict"], detail: event["detail"])
           sent_ids << event["id"]
         when "final_verdict"
-          write_event("final_verdict", verdict: event["verdict"], score: event["score"], reasons: event["reasons"])
+          write_event("final_verdict", verdict: event["verdict"], score: event["score"], reasons: event["reasons"],
+            certificate_serial: event["certificate_serial"])
           redis.unsubscribe
         end
       end
@@ -71,7 +72,8 @@ module Api
       end
 
       def write_final_verdict(run)
-        write_event("final_verdict", verdict: run.verdict, score: run.score, reasons: run.reasons)
+        write_event("final_verdict", verdict: run.verdict, score: run.score, reasons: run.reasons,
+          certificate_serial: run.certificate&.serial)
       end
 
       def write_event(name, data)

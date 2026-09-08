@@ -7,7 +7,7 @@ module Verification
 
     def call
       existing = LayerResult.find_by(verification_run: run, layer_key: layer_key)
-      
+
       return existing if existing && !existing.errored?
 
       outcome = run_adapter
@@ -22,7 +22,7 @@ module Verification
     def adapter_class
       "Layers::#{layer_key.camelize}".constantize
     end
-    
+
     def run_adapter
       adapter_class.new(run.lead, provider_rules).call
     rescue StandardError, NotImplementedError => e
@@ -30,6 +30,8 @@ module Verification
     end
 
     def charge_credits!
+      return if CreditTransaction.exists?(idempotency_key: "#{run.id}:#{layer_key}")
+
       CreditTransaction.create!(
         account: run.lead.account,
         verification_run: run,

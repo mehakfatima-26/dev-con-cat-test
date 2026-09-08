@@ -375,6 +375,19 @@ RSpec.describe Verification::RunLayer do
       expect(result.detail).to eq("already done")
       expect(CreditTransaction.where(verification_run: run, layer_key: "anura")).to be_empty
     end
+
+    it "recovers cleanly from a crash between charging credits and saving the LayerResult -- does not double-charge or blow up on the idempotency key" do
+      lead = create(:lead, lead_id: "L-1001")
+      run = create(:verification_run, lead: lead, policy_version: policy_with({}))
+      create(:credit_transaction, account: run.lead.account, verification_run: run,
+        layer_key: "anura", idempotency_key: "#{run.id}:anura")
+
+      result = described_class.new(verification_run: run, layer_key: "anura").call
+
+      expect(result.state).to eq("completed")
+      expect(result.result).to eq("pass")
+      expect(CreditTransaction.where(verification_run: run, layer_key: "anura").count).to eq(1)
+    end
   end
 
   describe "an unrecognized signal" do

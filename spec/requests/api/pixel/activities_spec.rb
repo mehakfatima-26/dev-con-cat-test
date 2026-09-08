@@ -28,6 +28,23 @@ RSpec.describe "Api::Pixel::Activities" do
     expect(response.body).to include(%("verdict":"accept","score":"0.95"))
   end
 
+  it "includes the certificate's serial in the final_verdict event once one has been issued" do
+    run = create(:verification_run, :completed, lead: lead)
+    certificate = create(:certificate, verification_run: run)
+
+    get_activity
+
+    expect(response.body).to include(%("certificate_serial":"#{certificate.serial}"))
+  end
+
+  it "omits certificate_serial (rather than erroring) when the run has no certificate yet" do
+    create(:verification_run, :completed, lead: lead)
+
+    get_activity
+
+    expect(response.body).to include(%("certificate_serial":null))
+  end
+
   it "rejects a missing/invalid token" do
     get_activity(token: "not-a-real-token")
 

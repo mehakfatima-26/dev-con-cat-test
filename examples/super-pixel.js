@@ -171,7 +171,13 @@
             }
             subscribeToActivity(res.lead_id, res.stream_token);
           } else if (res.verdict) {
-            emit({ type: "final_verdict", verdict: res.verdict, score: res.score, reasons: res.reasons });
+            emit({
+              type: "final_verdict",
+              verdict: res.verdict,
+              score: res.score,
+              reasons: res.reasons,
+              certificateSerial: res.certificate_serial,
+            });
           }
         });
       } else {
@@ -183,7 +189,7 @@
   // Real transport: Server-Sent Events against the Rails backend. Emits the
   // same shape the demo page already consumes:
   //   { type: "layer_result", layer, verdict, detail }
-  //   { type: "final_verdict", verdict, score, reasons }
+  //   { type: "final_verdict", verdict, score, reasons, certificateSerial }
   function subscribeToActivity(leadId, streamToken) {
     emit({ type: "info", message: "Subscribed to activity for " + leadId });
     if (!CONFIG.endpoint || !streamToken) return;
@@ -203,7 +209,13 @@
 
     source.addEventListener("final_verdict", function (e) {
       var data = JSON.parse(e.data);
-      emit({ type: "final_verdict", verdict: data.verdict, score: data.score, reasons: data.reasons });
+      emit({
+        type: "final_verdict",
+        verdict: data.verdict,
+        score: data.score,
+        reasons: data.reasons,
+        certificateSerial: data.certificate_serial,
+      });
       source.close();
     });
 

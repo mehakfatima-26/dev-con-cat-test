@@ -44,6 +44,22 @@ RSpec.describe Verification::RunLayersJob do
     expect(run.certificate.incomplete?).to be false
   end
 
+  it "issues the certificate before broadcasting the final verdict, so the live activity stream can include its link" do
+    account = account_with(modules: %w[anura trustedform dnc duplicate_detection])
+    lead = lead_for(account, lead_id: "L-1001")
+
+    captured_certificate = nil
+    allow(Verification::ActivityPublisher).to receive(:publish_final_verdict) do |_run, certificate|
+      captured_certificate = certificate
+    end
+
+    run = Verification::Runner.call(lead, async: false)
+    run.reload
+
+    expect(captured_certificate).to be_present
+    expect(captured_certificate.serial).to eq(run.certificate.serial)
+  end
+
   it "rejects a confirmed bot outright via anura's hard stop, and still issues a certificate" do
     account = account_with(modules: %w[anura trustedform dnc duplicate_detection])
     lead = lead_for(account, lead_id: "L-1002", phone: "+12025550188", email: "jsmith9981@mail-tempz.example")
