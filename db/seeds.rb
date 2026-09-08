@@ -6,39 +6,42 @@ puts "== Accounts =="
 ACCOUNTS = {
   "acct_solarpro" => {
     company_name: "SolarPro Leads LLC", plan: :growth, monthly_credit_allowance: 25_000,
-    cycle_start: Date.new(2026, 7, 1), cycle_end: Date.new(2026, 7, 31), status: :active,
+    status: :active,
     enabled_modules: %w[anura trustedform dnc blacklist_alliance phone_validation email_validation vpn_proxy enrichment duplicate_detection],
     avg_daily_burn: 1_140, billing_contact: "ops@solarpro.example",
     origin: "https://solar-savings.example.com"
   },
   "acct_medicareedge" => {
     company_name: "Medicare Edge Marketing", plan: :enterprise, monthly_credit_allowance: 120_000,
-    cycle_start: Date.new(2026, 7, 1), cycle_end: Date.new(2026, 7, 31), status: :active,
+    status: :active,
     enabled_modules: %w[anura trustedform dnc blacklist_alliance phone_validation email_validation enrichment duplicate_detection voice],
     avg_daily_burn: 2_480, billing_contact: "compliance@medicareedge.example",
     origin: "https://medicare-help.example.com"
   },
   "acct_autoinsure" => {
     company_name: "AutoInsure Direct", plan: :starter, monthly_credit_allowance: 8_000,
-    cycle_start: Date.new(2026, 7, 1), cycle_end: Date.new(2026, 7, 31), status: :past_due,
+    status: :past_due,
     enabled_modules: %w[anura trustedform dnc phone_validation duplicate_detection],
     avg_daily_burn: 410, billing_contact: "founder@autoinsure.example",
     origin: "https://auto-quotes.example.com"
   }
 }.freeze
 
+CYCLE_START = Date.current.beginning_of_month
+CYCLE_END = Date.current.end_of_month
+
 accounts = ACCOUNTS.each_with_object({}) do |(account_id, attrs), memo|
-  account = Account.find_or_create_by!(account_id: account_id) do |a|
-    a.company_name = attrs[:company_name]
-    a.plan = attrs[:plan]
-    a.monthly_credit_allowance = attrs[:monthly_credit_allowance]
-    a.cycle_start = attrs[:cycle_start]
-    a.cycle_end = attrs[:cycle_end]
-    a.status = attrs[:status]
-    a.enabled_modules = attrs[:enabled_modules]
-    a.avg_daily_burn = attrs[:avg_daily_burn]
-    a.billing_contact = attrs[:billing_contact]
-  end
+  account = Account.find_or_initialize_by(account_id: account_id)
+  account.company_name = attrs[:company_name]
+  account.plan = attrs[:plan]
+  account.monthly_credit_allowance = attrs[:monthly_credit_allowance]
+  account.cycle_start = CYCLE_START
+  account.cycle_end = CYCLE_END
+  account.status = attrs[:status]
+  account.enabled_modules = attrs[:enabled_modules]
+  account.avg_daily_burn = attrs[:avg_daily_burn]
+  account.billing_contact = attrs[:billing_contact]
+  account.save!
   memo[account_id] = account
   puts "  #{account.account_id} (#{account.company_name}) -- #{account.enabled_modules.size}/#{DetectionLayer::KEYS.size} modules enabled"
 end
@@ -177,6 +180,39 @@ else
 end
 
 # ---------------------------------------------------------------------------
+# Buyers' own CRM records
+# ---------------------------------------------------------------------------
+puts "\n== Buyers' CRM records =="
+
+CRM_RECORDS = {
+  "acct_solarpro" => [
+    { crm_id: "SP-40021", first_name: "Alan", last_name: "Reyes", email: "alan.reyes@gmail.com", phone: "+13105550111", crm_created_at: "2026-05-11T10:00:00Z" },
+    { crm_id: "SP-40088", first_name: "Maria", last_name: "Gonzalez", email: "maria.g.old@yahoo.com", phone: "+13105550999", crm_created_at: "2026-06-02T12:30:00Z" }
+  ],
+  "acct_medicareedge" => [
+    { crm_id: "ME-88213", first_name: "Patricia", last_name: "Nguyen", email: "patricia.nguyen@gmail.com", phone: "+17135550173", crm_created_at: "2026-06-28T09:15:00Z" },
+    { crm_id: "ME-88410", first_name: "Howard", last_name: "Kim", email: "howard.kim@gmail.com", phone: "+17135550100", crm_created_at: "2026-07-01T14:45:00Z" }
+  ],
+  "acct_autoinsure" => [
+    { crm_id: "AI-55019", first_name: "Emily", last_name: "Watson", email: "emily.watson.personal@gmail.com", phone: "+16465550193", crm_created_at: "2026-07-19T22:05:00Z" }
+  ]
+}.freeze
+
+CRM_RECORDS.each do |account_id, records|
+  account = accounts.fetch(account_id)
+  records.each do |attrs|
+    record = CrmRecord.find_or_initialize_by(account: account, crm_id: attrs[:crm_id])
+    record.first_name = attrs[:first_name]
+    record.last_name = attrs[:last_name]
+    record.email = attrs[:email]
+    record.phone = attrs[:phone]
+    record.crm_created_at = attrs[:crm_created_at]
+    record.save!
+    puts "  #{attrs[:crm_id]} -> #{account_id} (#{attrs[:first_name]} #{attrs[:last_name]})"
+  end
+end
+
+# ---------------------------------------------------------------------------
 # The 12 leads -- created, then run through the REAL pipeline synchronously
 # ---------------------------------------------------------------------------
 puts "\n== Leads (running the real verification pipeline) =="
@@ -198,25 +234,24 @@ LEADS = [
 
 results = LEADS.map do |attrs|
   expected = attrs.fetch(:expected_verdict)
-  existing = Lead.find_by(lead_id: attrs[:lead_id])
 
-  if existing
-    run = existing.verification_run
-    { lead_id: attrs[:lead_id], expected: expected, actual: run&.verdict, score: run&.score }
-  else
-    account = accounts.fetch(attrs.fetch(:account_id))
-    lead = Lead.create!(
-      account: account, pixel: pixels.fetch(attrs.fetch(:account_id)),
-      lead_id: attrs[:lead_id], first_name: attrs[:first_name], last_name: attrs[:last_name],
-      email: attrs[:email], phone: attrs[:phone], ip_address: attrs[:ip_address],
-      user_agent: attrs[:user_agent], landing_page_url: attrs[:landing_page_url],
-      trusted_form_cert_url: attrs[:trusted_form_cert_url], form_dwell_ms: attrs[:form_dwell_ms],
-      captured_at: attrs[:captured_at]
-    )
+  lead = Lead.find_by(lead_id: attrs[:lead_id])
+  lead ||= Lead.create!(
+    account: accounts.fetch(attrs.fetch(:account_id)), pixel: pixels.fetch(attrs.fetch(:account_id)),
+    lead_id: attrs[:lead_id], first_name: attrs[:first_name], last_name: attrs[:last_name],
+    email: attrs[:email], phone: attrs[:phone], ip_address: attrs[:ip_address],
+    user_agent: attrs[:user_agent], landing_page_url: attrs[:landing_page_url],
+    trusted_form_cert_url: attrs[:trusted_form_cert_url], form_dwell_ms: attrs[:form_dwell_ms],
+    captured_at: attrs[:captured_at]
+  )
+
+  run = lead.verification_run
+  if run.nil?
     run = Verification::Runner.call(lead, async: false)
     run.reload
-    { lead_id: attrs[:lead_id], expected: expected, actual: run.verdict, score: run.score }
   end
+
+  { lead_id: attrs[:lead_id], expected: expected, actual: run.verdict, score: run.score }
 end
 
 puts "\n== Verdict summary (expected hint vs. derived) =="
