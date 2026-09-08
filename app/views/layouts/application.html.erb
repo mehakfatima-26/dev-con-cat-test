@@ -17,6 +17,12 @@
   </head>
 
   <body>
+    <% if user_signed_in? %>
+      <div class="global-topbar">
+        <span class="global-topbar-identity"><%= current_user.email %></span>
+        <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "global-topbar-signout" %>
+      </div>
+    <% end %>
     <p class="notice"><%= notice %></p>
     <p class="alert"><%= alert %></p>
     <%= yield %>

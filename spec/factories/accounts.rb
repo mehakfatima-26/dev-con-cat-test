@@ -7,7 +7,6 @@ FactoryBot.define do
     monthly_credit_allowance { 25_000 }
     cycle_start { Date.current.beginning_of_month }
     cycle_end { Date.current.end_of_month }
-    avg_daily_burn { 1_000 }
     enabled_modules { %w[anura trustedform dnc phone_validation duplicate_detection] }
     billing_contact { "ops@testbuyer.example" }
   end

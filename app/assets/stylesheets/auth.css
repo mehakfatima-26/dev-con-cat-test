@@ -1,0 +1,149 @@
+/* Devise auth screens (sessions#new, etc.) */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1), 0 4px 16px rgba(16, 24, 40, 0.06);
+  padding: 40px 36px;
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-brand .auth-logo {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #111827;
+}
+
+.auth-card h2 {
+  margin: 0 0 24px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+}
+
+.auth-card .field {
+  margin-bottom: 18px;
+}
+
+.auth-card .field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.auth-card .field input[type="email"],
+.auth-card .field input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-card .field input[type="email"]:focus,
+.auth-card .field input[type="password"]:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.auth-card .actions {
+  margin-top: 24px;
+}
+
+.auth-card .actions input[type="submit"] {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #4f46e5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auth-card .actions input[type="submit"]:hover {
+  background: #4338ca;
+}
+
+.auth-card .actions input[type="submit"]:active {
+  background: #3730a3;
+}
+
+#error_explanation {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+#error_explanation h2 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b91c1c;
+  text-align: left;
+}
+
+#error_explanation ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+#error_explanation li {
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+/* Flash messages rendered by the base layout (notice/alert) */
+body > p.notice,
+body > p.alert {
+  max-width: 380px;
+  margin: 16px auto 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+body > p.notice:empty,
+body > p.alert:empty {
+  display: none;
+}
+
+body > p.notice {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+body > p.alert {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}

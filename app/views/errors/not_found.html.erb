@@ -1,0 +1,10 @@
+<% content_for :title, "Not Found" %>
+
+<div class="error-page">
+  <div class="error-card">
+    <span class="error-code">404</span>
+    <h1>Not found</h1>
+    <p>That record doesn't exist, or isn't visible to your account.</p>
+    <%= link_to "Back to dashboard", root_path, class: "error-back-btn" %>
+  </div>
+</div>

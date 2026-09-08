@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   devise_for :users
   root to: "dashboard#show"
 
+  resources :leads, only: %i[index show]
+
   get "verify/:serial", to: "certificates#show", as: :verify_certificate
 
   namespace :admin do

@@ -1,8 +1,46 @@
-<h1>Signed in</h1>
-<p>Email: <%= Current.user.email %></p>
-<p>Role: <%= Current.user.role %></p>
-<p>Account: <%= Current.account&.company_name || "none (super_admin)" %></p>
-<% if Current.user.super_admin? %>
-  <p><%= link_to "Go to Super Admin Dashboard", admin_root_path %></p>
-<% end %>
-<%= button_to "Sign out", destroy_user_session_path, method: :delete %>
+<% content_for :title, "Dashboard" %>
+
+<div class="dash-page">
+  <div class="dash-header">
+    <h1>
+      <% if Current.account %>
+        Welcome back, <%= Current.account.company_name %>
+      <% else %>
+        Welcome back
+      <% end %>
+    </h1>
+    <span class="dash-role-badge dash-role-badge--<%= Current.user.role %>"><%= Current.user.role.titleize %></span>
+  </div>
+
+  <% if Current.account %>
+    <div class="dash-card-grid">
+      <section class="dash-card">
+        <h2 class="dash-card-title">Account</h2>
+        <dl class="dash-dl">
+          <dt>Plan</dt><dd><%= Current.account.plan.titleize %></dd>
+          <dt>Status</dt><dd><%= Current.account.status.titleize %></dd>
+        </dl>
+      </section>
+
+      <section class="dash-card">
+        <h2 class="dash-card-title">Credits this cycle</h2>
+        <dl class="dash-dl">
+          <dt>Allowance</dt><dd><%= number_with_delimiter(Current.account.monthly_credit_allowance) %></dd>
+          <dt>Used</dt><dd><%= number_with_delimiter(Current.account.credits_used_this_cycle) %></dd>
+          <dt>Remaining</dt><dd><%= number_with_delimiter(Current.account.credits_remaining) %></dd>
+        </dl>
+      </section>
+    </div>
+  <% else %>
+    <p class="dash-muted">Account: none (super_admin)</p>
+  <% end %>
+
+  <div class="dash-actions">
+    <% unless Current.user.super_admin? %>
+      <%= link_to "Go to CRM", leads_path, class: "dash-primary-btn" %>
+    <% end %>
+    <% if Current.user.super_admin? %>
+      <%= link_to "Go to Super Admin Dashboard", admin_root_path, class: "dash-primary-btn" %>
+    <% end %>
+  </div>
+</div>

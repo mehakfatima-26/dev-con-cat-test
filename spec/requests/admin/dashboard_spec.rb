@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Admin::Dashboard" do
   it "shows every account with correct plan/status/credit numbers to a super_admin" do
     account = create(:account, company_name: "Acme Leads", plan: :growth, status: :active,
-      monthly_credit_allowance: 10_000, avg_daily_burn: 100)
+      monthly_credit_allowance: 10_000)
     pixel = create(:pixel, account: account)
     lead = create(:lead, account: account, pixel: pixel)
     run = create(:verification_run, :completed, lead: lead)
@@ -23,7 +23,7 @@ RSpec.describe "Admin::Dashboard" do
   it "flags an at-risk account and does not flag a healthy one" do
     at_risk = create(:account, company_name: "Risky Co", status: :past_due)
     healthy = create(:account, company_name: "Healthy Co", status: :active,
-      monthly_credit_allowance: 100_000, avg_daily_burn: 10)
+      monthly_credit_allowance: 100_000)
 
     sign_in create(:user, :super_admin)
     get "/admin"
@@ -34,6 +34,27 @@ RSpec.describe "Admin::Dashboard" do
 
     expect(risky_row).to include("AT RISK")
     expect(healthy_row).not_to include("AT RISK")
+  end
+
+  it "offers a way to sign out" do
+    sign_in create(:user, :super_admin)
+    get "/admin"
+
+    expect(response.body).to include(destroy_user_session_path)
+
+    delete destroy_user_session_path
+    expect(response).to redirect_to(root_path)
+
+    get "/admin"
+    expect(response).to redirect_to(new_user_session_path)
+  end
+
+  it "links out to the all-accounts leads view" do
+    sign_in create(:user, :super_admin)
+    get "/admin"
+
+    expect(response.body).to include(leads_path)
+    expect(response.body).to include("All Leads")
   end
 
   it "denies a non-super_admin" do

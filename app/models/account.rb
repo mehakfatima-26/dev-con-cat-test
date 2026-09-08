@@ -14,7 +14,6 @@ class Account < ApplicationRecord
   validates :company_name, presence: true
   validates :billing_contact, presence: true
   validates :monthly_credit_allowance, numericality: { greater_than_or_equal_to: 0 }
-  validates :avg_daily_burn, numericality: { greater_than_or_equal_to: 0 }
   validates :cycle_start, :cycle_end, presence: true
   validate :cycle_end_after_cycle_start
   validate :enabled_modules_are_known_layers
@@ -25,6 +24,10 @@ class Account < ApplicationRecord
 
   def credits_remaining
     monthly_credit_allowance - credits_used_this_cycle
+  end
+
+  def avg_daily_burn
+    credits_used_this_cycle / elapsed_cycle_days.to_f
   end
 
   def days_to_zero
@@ -38,6 +41,10 @@ class Account < ApplicationRecord
   end
 
   private
+
+  def elapsed_cycle_days
+    [ ([ Date.current, cycle_end ].compact.min - cycle_start).to_i, 1 ].max
+  end
 
   def cycle_end_after_cycle_start
     return if cycle_start.blank? || cycle_end.blank?

@@ -80,34 +80,55 @@ RSpec.describe Account do
     end
   end
 
-  describe "days_to_zero and at_risk? (super-admin dashboard flagging)" do
-    it "divides remaining credits by the daily burn rate" do
-      account = build(:account, monthly_credit_allowance: 8_000, avg_daily_burn: 410)
-
-      expect(account.days_to_zero).to eq(8_000 / 410.0)
+  describe "avg_daily_burn (computed live from the ledger, not a stored/seeded number)" do
+    def charge(account, amount)
+      run = create(:verification_run, lead: create(:lead, pixel: account.pixel || create(:pixel, account: account), account: account))
+      create(:credit_transaction, account: account, verification_run: run, layer_key: "anura", amount: -amount)
     end
 
-    it "treats a zero burn rate as no risk from usage, not a division error" do
-      account = build(:account, avg_daily_burn: 0)
+    it "divides credits used this cycle by days elapsed in the cycle so far" do
+      account = create(:account, monthly_credit_allowance: 8_000, cycle_start: Date.current - 10.days, cycle_end: Date.current + 20.days)
+      charge(account, 4_100)
 
+      expect(account.avg_daily_burn).to eq(410.0)
+      expect(account.days_to_zero).to eq((8_000 - 4_100) / 410.0)
+    end
+
+    it "treats a cycle with no spend yet as zero burn -- no risk from usage, not a division error" do
+      account = create(:account)
+
+      expect(account.avg_daily_burn).to eq(0.0)
       expect(account.days_to_zero).to eq(Float::INFINITY)
     end
 
+    it "never divides by fewer than 1 elapsed day, even on the first day of a cycle" do
+      account = create(:account, cycle_start: Date.current, cycle_end: Date.current + 30.days)
+      charge(account, 50)
+
+      expect(account.avg_daily_burn).to eq(50.0)
+    end
+  end
+
+  describe "at_risk? (super-admin dashboard flagging)" do
     it "flags a past_due account even with plenty of credits remaining" do
-      account = build(:account, status: :past_due, monthly_credit_allowance: 100_000, avg_daily_burn: 10)
+      account = create(:account, status: :past_due, monthly_credit_allowance: 100_000)
 
       expect(account.at_risk?).to be true
     end
 
     it "flags an active account that is about to run dry, even though billing is fine" do
-      account = build(:account, status: :active, monthly_credit_allowance: 100, avg_daily_burn: 50)
+      account = create(:account, status: :active, monthly_credit_allowance: 600,
+        cycle_start: Date.current - 10.days, cycle_end: Date.current + 20.days)
+      run = create(:verification_run, lead: create(:lead, pixel: create(:pixel, account: account), account: account))
+      create(:credit_transaction, account: account, verification_run: run, layer_key: "anura", amount: -500)
 
+      expect(account.avg_daily_burn).to eq(50.0)
       expect(account.days_to_zero).to eq(2.0)
       expect(account.at_risk?).to be true
     end
 
-    it "does not flag a healthy active account with plenty of runway" do
-      account = build(:account, status: :active, monthly_credit_allowance: 25_000, avg_daily_burn: 1_140)
+    it "does not flag a healthy active account with plenty of runway and no real spend" do
+      account = create(:account, status: :active, monthly_credit_allowance: 25_000)
 
       expect(account.at_risk?).to be false
     end
@@ -119,7 +140,7 @@ RSpec.describe Account do
         account_id: "acct_db_constraint_test", company_name: "Evil Co",
         plan: 0, status: 0, monthly_credit_allowance: 100,
         cycle_start: Date.current, cycle_end: Date.current + 30,
-        avg_daily_burn: 0, enabled_modules: "{}",
+        enabled_modules: "{}",
         created_at: Time.current, updated_at: Time.current
       }
     end
@@ -128,12 +149,6 @@ RSpec.describe Account do
       expect {
         Account.insert_all!([ base_attrs.merge(monthly_credit_allowance: -500) ])
       }.to raise_error(ActiveRecord::StatementInvalid, /accounts_monthly_credit_allowance_non_negative/)
-    end
-
-    it "rejects a negative avg_daily_burn at the DB level" do
-      expect {
-        Account.insert_all!([ base_attrs.merge(avg_daily_burn: -1) ])
-      }.to raise_error(ActiveRecord::StatementInvalid, /accounts_avg_daily_burn_non_negative/)
     end
 
     it "rejects an out-of-range plan at the DB level" do

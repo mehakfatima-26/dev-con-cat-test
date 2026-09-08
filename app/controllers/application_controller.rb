@@ -10,14 +10,22 @@ class ApplicationController < ActionController::Base
   after_action :verify_pundit_authorization, unless: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
 
   private
+
+  def render_not_found
+    respond_to do |format|
+      format.html { render "errors/not_found", status: :not_found, layout: "application" }
+      format.any { head :not_found }
+    end
+  end
 
   def set_current_attributes
     Current.user = current_user
     Current.account = current_user.account
   end
-  
+
   def after_sign_in_path_for(resource)
     resource.super_admin? ? admin_root_path : super
   end

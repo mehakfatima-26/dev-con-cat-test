@@ -8,21 +8,21 @@ ACCOUNTS = {
     company_name: "SolarPro Leads LLC", plan: :growth, monthly_credit_allowance: 25_000,
     status: :active,
     enabled_modules: %w[anura trustedform dnc blacklist_alliance phone_validation email_validation vpn_proxy enrichment duplicate_detection],
-    avg_daily_burn: 1_140, billing_contact: "ops@solarpro.example",
+    billing_contact: "ops@solarpro.example",
     origin: "https://solar-savings.example.com"
   },
   "acct_medicareedge" => {
     company_name: "Medicare Edge Marketing", plan: :enterprise, monthly_credit_allowance: 120_000,
     status: :active,
     enabled_modules: %w[anura trustedform dnc blacklist_alliance phone_validation email_validation enrichment duplicate_detection voice],
-    avg_daily_burn: 2_480, billing_contact: "compliance@medicareedge.example",
+    billing_contact: "compliance@medicareedge.example",
     origin: "https://medicare-help.example.com"
   },
   "acct_autoinsure" => {
-    company_name: "AutoInsure Direct", plan: :starter, monthly_credit_allowance: 35,
+    company_name: "AutoInsure Direct", plan: :starter, monthly_credit_allowance: 50,
     status: :past_due,
-    enabled_modules: %w[anura trustedform dnc phone_validation duplicate_detection],
-    avg_daily_burn: 410, billing_contact: "founder@autoinsure.example",
+    enabled_modules: %w[anura trustedform dnc phone_validation duplicate_detection voice],
+    billing_contact: "founder@autoinsure.example",
     origin: "https://auto-quotes.example.com"
   }
 }.freeze
@@ -39,7 +39,6 @@ accounts = ACCOUNTS.each_with_object({}) do |(account_id, attrs), memo|
   account.cycle_end = CYCLE_END
   account.status = attrs[:status]
   account.enabled_modules = attrs[:enabled_modules]
-  account.avg_daily_burn = attrs[:avg_daily_burn]
   account.billing_contact = attrs[:billing_contact]
   account.save!
   memo[account_id] = account
@@ -240,7 +239,7 @@ results = LEADS.map do |attrs|
     account: accounts.fetch(attrs.fetch(:account_id)), pixel: pixels.fetch(attrs.fetch(:account_id)),
     lead_id: attrs[:lead_id], first_name: attrs[:first_name], last_name: attrs[:last_name],
     email: attrs[:email], phone: attrs[:phone], ip_address: attrs[:ip_address],
-    user_agent: attrs[:user_agent], landing_page_url: attrs[:landing_page_url],
+    user_agent: attrs[:user_agent], landing_page_url: attrs[:landing_page_url], campaign: attrs[:campaign],
     trusted_form_cert_url: attrs[:trusted_form_cert_url], form_dwell_ms: attrs[:form_dwell_ms],
     captured_at: attrs[:captured_at]
   )

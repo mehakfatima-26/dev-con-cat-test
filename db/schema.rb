@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_07_030000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_09_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,13 +22,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_07_030000) do
     t.integer "monthly_credit_allowance", default: 0, null: false
     t.date "cycle_start", null: false
     t.date "cycle_end", null: false
-    t.integer "avg_daily_burn", default: 0, null: false
     t.string "billing_contact"
     t.string "enabled_modules", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_accounts_on_account_id", unique: true
-    t.check_constraint "avg_daily_burn >= 0", name: "accounts_avg_daily_burn_non_negative"
     t.check_constraint "cycle_end > cycle_start", name: "accounts_cycle_end_after_cycle_start"
     t.check_constraint "monthly_credit_allowance >= 0", name: "accounts_monthly_credit_allowance_non_negative"
     t.check_constraint "plan >= 0 AND plan <= 2", name: "accounts_plan_within_enum_range"

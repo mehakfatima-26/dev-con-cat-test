@@ -1,0 +1,84 @@
+<% content_for :title, leads_page_label %>
+
+<div class="crm-page">
+  <div class="crm-header">
+    <h1><%= leads_page_label %></h1>
+    <span class="crm-subtitle">
+      <%= Current.account&.company_name || "All accounts" %> &middot; <%= @leads.size %> lead<%= "s" unless @leads.size == 1 %>
+    </span>
+  </div>
+
+  <%= form_with url: leads_path, method: :get, class: "crm-filters" do %>
+    <input type="text" name="q" value="<%= @q %>" placeholder="Search name, email, phone, lead id&hellip;" class="crm-search">
+
+    <div class="crm-verdict-filter">
+      <%= link_to "All", leads_path(q: @q), class: "crm-filter-chip #{"is-active" if @verdict.nil?}" %>
+      <%= link_to "Accept", leads_path(q: @q, verdict: "accept"), class: "crm-filter-chip #{"is-active" if @verdict == "accept"}" %>
+      <%= link_to "Review", leads_path(q: @q, verdict: "review"), class: "crm-filter-chip #{"is-active" if @verdict == "review"}" %>
+      <%= link_to "Reject", leads_path(q: @q, verdict: "reject"), class: "crm-filter-chip #{"is-active" if @verdict == "reject"}" %>
+    </div>
+
+    <%= button_tag "Search", type: "submit", class: "crm-search-btn" %>
+  <% end %>
+
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead>
+        <tr>
+          <th>Lead</th>
+          <% if Current.user.super_admin? %>
+            <th>Account</th>
+          <% end %>
+          <th>Contact</th>
+          <th>Campaign</th>
+          <th>Captured</th>
+          <th>Verdict</th>
+          <th>Certificate</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @leads.empty? %>
+          <tr>
+            <td colspan="<%= Current.user.super_admin? ? 8 : 7 %>" class="crm-empty">No leads match this filter.</td>
+          </tr>
+        <% end %>
+
+        <% @leads.each do |lead| %>
+          <% run = lead.verification_run %>
+          <% certificate = run&.certificate %>
+          <tr>
+            <td>
+              <span class="crm-lead-id"><%= lead.lead_id %></span><br>
+              <span class="crm-name"><%= lead.first_name %> <%= lead.last_name %></span>
+            </td>
+            <% if Current.user.super_admin? %>
+              <td><%= lead.account.company_name %></td>
+            <% end %>
+            <td>
+              <%= lead.email %><br>
+              <span class="crm-muted"><%= lead.phone %></span>
+            </td>
+            <td><%= lead.campaign.presence || "&mdash;".html_safe %></td>
+            <td><%= lead.captured_at.strftime("%b %-d, %Y %H:%M") %></td>
+            <td>
+              <% if run %>
+                <span class="<%= verdict_badge_class(run.verdict) %>"><%= run.verdict.to_s.upcase %></span>
+              <% else %>
+                <span class="badge badge--neutral">PENDING</span>
+              <% end %>
+            </td>
+            <td>
+              <% if certificate %>
+                <%= link_to certificate.serial, verify_certificate_path(serial: certificate.serial), class: "crm-cert-link", target: "_blank", rel: "noopener" %>
+              <% else %>
+                <span class="crm-muted">&mdash;</span>
+              <% end %>
+            </td>
+            <td><%= link_to "View", lead_path(lead), class: "crm-view-link" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
