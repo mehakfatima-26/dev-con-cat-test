@@ -80,16 +80,19 @@
             <th>Layer</th>
             <th>Result</th>
             <th>Weight</th>
+            <th>Credits</th>
             <th>Detail</th>
           </tr>
         </thead>
         <tbody>
           <% DetectionLayer::KEYS.each do |layer_key| %>
             <% layer_result = @layer_results[layer_key] %>
+            <% charge = @credits_by_layer[layer_key] %>
             <tr>
               <td><%= layer_label(layer_key) %></td>
               <td><span class="<%= layer_state_badge_class(layer_result) %>"><%= layer_state_label(layer_result) %></span></td>
               <td><%= layer_result&.weight ? number_with_precision(layer_result.weight, precision: 3) : "&mdash;".html_safe %></td>
+              <td><%= charge ? charge.amount.abs : 0 %></td>
               <td class="crm-detail-cell"><%= layer_result&.detail || "Account has not enabled this module" %></td>
             </tr>
           <% end %>

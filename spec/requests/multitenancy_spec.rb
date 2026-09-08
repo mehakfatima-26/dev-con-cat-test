@@ -53,13 +53,23 @@ RSpec.describe "Multi-tenancy and role boundaries" do
       expect(response.body).not_to include("Account B Co")
     end
 
-    it "a super_admin hitting the tenant dashboard has no account to leak" do
+    it "a super_admin hitting the tenant dashboard is redirected to Super Admin instead -- nothing to leak because nothing renders" do
       admin = create(:user, :super_admin)
       sign_in admin
 
       get root_path
 
-      expect(response.body).to include("none (super_admin)")
+      expect(response).to redirect_to(admin_root_path)
+    end
+
+    it "links a regular user to their pixel, but never offers that link to a super_admin" do
+      sign_in create(:user, account: create(:account))
+      get root_path
+      expect(response.body).to include(pixel_path)
+
+      sign_in create(:user, :super_admin)
+      get root_path
+      expect(response.body).not_to include(pixel_path)
     end
   end
 end

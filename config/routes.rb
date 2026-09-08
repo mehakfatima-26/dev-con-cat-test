@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   root to: "dashboard#show"
 
   resources :leads, only: %i[index show]
+  resource :pixel, only: %i[show new create]
 
   get "verify/:serial", to: "certificates#show", as: :verify_certificate
 

@@ -14,6 +14,7 @@ class LeadsController < ApplicationController
 
     @run = @lead.verification_run
     @layer_results = @run ? @run.layer_results.index_by(&:layer_key) : {}
+    @credits_by_layer = @run ? @run.credit_transactions.index_by(&:layer_key) : {}
     @certificate = @run&.certificate
   end
 

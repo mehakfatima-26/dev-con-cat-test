@@ -85,7 +85,6 @@ pixels = accounts.each_with_object({}) do |(account_id, account), memo|
   pixel = Pixel.find_or_initialize_by(pixel_id: PIXEL_IDS.fetch(account_id))
   pixel.account = account
   pixel.name = "#{account.company_name} Landing Page"
-  pixel.signing_secret ||= SecureRandom.hex(20)
   pixel.allowed_origins = [ ACCOUNTS.fetch(account_id)[:origin], DEMO_ORIGIN ].compact.uniq
   pixel.save!
   memo[account_id] = pixel

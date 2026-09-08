@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_09_09_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_09_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -156,7 +156,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_09_000000) do
     t.bigint "account_id", null: false
     t.string "pixel_id", null: false
     t.string "name", null: false
-    t.string "signing_secret", null: false
     t.string "allowed_origins", default: [], null: false, array: true
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false

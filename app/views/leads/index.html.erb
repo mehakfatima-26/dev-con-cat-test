@@ -1,6 +1,12 @@
 <% content_for :title, leads_page_label %>
 
 <div class="crm-page">
+  <% if Current.user.super_admin? %>
+    <%= link_to "&larr; Back to Super Admin".html_safe, admin_root_path, class: "crm-back-link" %>
+  <% else %>
+    <%= link_to "&larr; Back to Dashboard".html_safe, root_path, class: "crm-back-link" %>
+  <% end %>
+
   <div class="crm-header">
     <h1><%= leads_page_label %></h1>
     <span class="crm-subtitle">

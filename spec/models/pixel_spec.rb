@@ -25,12 +25,6 @@ RSpec.describe Pixel do
     expect(pixel).not_to be_valid
   end
 
-  it "requires signing_secret" do
-    pixel = build(:pixel, signing_secret: nil)
-
-    expect(pixel).not_to be_valid
-  end
-
   it "exposes the statuses from the seed data" do
     expect(Pixel.statuses.keys).to contain_exactly("active", "paused")
   end
@@ -76,7 +70,7 @@ RSpec.describe Pixel do
     let(:base_attrs) do
       {
         account_id: create(:account).id, pixel_id: "px_db_constraint_test",
-        name: "DB Test", signing_secret: "secret", allowed_origins: "{}",
+        name: "DB Test", allowed_origins: "{}",
         status: 0, created_at: Time.current, updated_at: Time.current
       }
     end

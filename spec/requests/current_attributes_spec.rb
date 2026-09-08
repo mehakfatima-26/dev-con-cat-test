@@ -12,13 +12,13 @@ RSpec.describe "Current attributes" do
     expect(response.body).to include("Current Attrs Test Co")
   end
 
-  it "leaves Current.account blank for a super_admin" do
+  it "leaves Current.account blank for a super_admin -- redirected to Super Admin before anything renders" do
     admin = create(:user, :super_admin)
     sign_in admin
 
     get root_path
 
-    expect(response.body).to include("none (super_admin)")
+    expect(response).to redirect_to(admin_root_path)
   end
 
   it "redirects an unauthenticated request instead of raising" do

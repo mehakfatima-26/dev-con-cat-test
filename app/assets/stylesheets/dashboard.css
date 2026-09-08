@@ -116,3 +116,20 @@
 .dash-primary-btn:hover {
   background: #4338ca;
 }
+
+.dash-secondary-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.dash-secondary-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}

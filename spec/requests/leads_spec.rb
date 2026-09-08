@@ -25,6 +25,16 @@ RSpec.describe "Leads (CRM)" do
       expect(response.body).not_to include(foreign_lead.lead_id)
     end
 
+    it "links back to the dashboard for account_admin/member, and to Super Admin for a super_admin" do
+      sign_in member_a
+      get "/leads"
+      expect(response.body).to include(root_path)
+
+      sign_in create(:user, :super_admin)
+      get "/leads"
+      expect(response.body).to include(admin_root_path)
+    end
+
     it "searches by name, email, phone, and lead_id" do
       target, = lead_with_run(account_a, attrs: { first_name: "Zelda", last_name: "Ng", email: "zelda@example.com" })
       other, = lead_with_run(account_a, attrs: { first_name: "Someone", last_name: "Else" })
@@ -92,6 +102,22 @@ RSpec.describe "Leads (CRM)" do
       expect(response.body).to include(lead.email)
       expect(response.body).to include("Anura")
       expect(response.body).to include(certificate.serial)
+    end
+
+    it "shows credits actually charged per layer, and 0 for a layer that was never charged" do
+      lead, run = lead_with_run(account_a, run_attrs: { enabled_modules_snapshot: %w[anura] })
+      create(:layer_result, verification_run: run, layer_key: "anura", state: :completed, result: :pass, detail: "clean")
+      create(:credit_transaction, account: account_a, verification_run: run, layer_key: "anura", amount: -2)
+
+      sign_in member_a
+      get "/leads/#{lead.id}"
+
+      body = response.body
+      anura_row = body[/<tr>(?:(?!<\/tr>).)*Anura.*?<\/tr>/m]
+      voice_row = body[/<tr>(?:(?!<\/tr>).)*Voice.*?<\/tr>/m]
+
+      expect(anura_row).to include(">2<")
+      expect(voice_row).to include(">0<")
     end
 
     it "shows layers the account never enabled as 'Not enabled', not conflated with a real result" do

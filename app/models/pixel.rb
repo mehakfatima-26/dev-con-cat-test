@@ -10,7 +10,6 @@ class Pixel < ApplicationRecord
   validates :pixel_id, presence: true, uniqueness: true
   validates :account_id, uniqueness: true
   validates :name, presence: true
-  validates :signing_secret, presence: true
   validate :allowed_origins_present_and_well_formed
 
   private
