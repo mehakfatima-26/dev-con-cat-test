@@ -2,4 +2,7 @@
 <p>Email: <%= Current.user.email %></p>
 <p>Role: <%= Current.user.role %></p>
 <p>Account: <%= Current.account&.company_name || "none (super_admin)" %></p>
+<% if Current.user.super_admin? %>
+  <p><%= link_to "Go to Super Admin Dashboard", admin_root_path %></p>
+<% end %>
 <%= button_to "Sign out", destroy_user_session_path, method: :delete %>

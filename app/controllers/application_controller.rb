@@ -17,6 +17,10 @@ class ApplicationController < ActionController::Base
     Current.user = current_user
     Current.account = current_user.account
   end
+  
+  def after_sign_in_path_for(resource)
+    resource.super_admin? ? admin_root_path : super
+  end
 
   def user_not_authorized
     redirect_to root_path, alert: "You are not authorized to perform that action."

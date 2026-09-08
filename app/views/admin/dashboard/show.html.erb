@@ -1,2 +1,44 @@
-<h1>Super Admin</h1>
-<p>Signed in as <%= current_user.email %></p>
+<% content_for :title, "Super Admin" %>
+
+<div style="max-width: 1040px; margin: 40px auto; font-family: sans-serif; line-height: 1.5;">
+  <h1>Super Admin</h1>
+  <p style="color: #666;">Signed in as <%= current_user.email %></p>
+
+  <h2 style="margin-top: 28px;">Accounts</h2>
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="text-align: left; border-bottom: 2px solid #ddd;">
+        <th style="padding: 8px;">Company</th>
+        <th style="padding: 8px;">Plan</th>
+        <th style="padding: 8px;">Status</th>
+        <th style="padding: 8px; text-align: right;">Allowance</th>
+        <th style="padding: 8px; text-align: right;">Used</th>
+        <th style="padding: 8px; text-align: right;">Remaining</th>
+        <th style="padding: 8px; text-align: right;">Burn/day</th>
+        <th style="padding: 8px; text-align: right;">Days left</th>
+        <th style="padding: 8px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @accounts.each do |account| %>
+        <tr style="border-bottom: 1px solid #eee; <%= "background: #fbe9e7;" if account.at_risk? %>">
+          <td style="padding: 8px;"><%= account.company_name %></td>
+          <td style="padding: 8px;"><%= account.plan.titleize %></td>
+          <td style="padding: 8px;"><%= account.status.titleize %></td>
+          <td style="padding: 8px; text-align: right;"><%= number_with_delimiter(account.monthly_credit_allowance) %></td>
+          <td style="padding: 8px; text-align: right;"><%= number_with_delimiter(account.credits_used_this_cycle) %></td>
+          <td style="padding: 8px; text-align: right;"><%= number_with_delimiter(account.credits_remaining) %></td>
+          <td style="padding: 8px; text-align: right;"><%= number_with_delimiter(account.avg_daily_burn) %></td>
+          <td style="padding: 8px; text-align: right;">
+            <%= account.days_to_zero.infinite? ? "–" : number_with_precision(account.days_to_zero, precision: 1) %>
+          </td>
+          <td style="padding: 8px;">
+            <% if account.at_risk? %>
+              <span style="background: #b71c1c; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 999px;">AT RISK</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

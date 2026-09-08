@@ -27,6 +27,16 @@ class Account < ApplicationRecord
     monthly_credit_allowance - credits_used_this_cycle
   end
 
+  def days_to_zero
+    return Float::INFINITY if avg_daily_burn.zero?
+
+    credits_remaining / avg_daily_burn.to_f
+  end
+
+  def at_risk?
+    past_due? || days_to_zero < 3
+  end
+
   private
 
   def cycle_end_after_cycle_start

@@ -80,6 +80,39 @@ RSpec.describe Account do
     end
   end
 
+  describe "days_to_zero and at_risk? (super-admin dashboard flagging)" do
+    it "divides remaining credits by the daily burn rate" do
+      account = build(:account, monthly_credit_allowance: 8_000, avg_daily_burn: 410)
+
+      expect(account.days_to_zero).to eq(8_000 / 410.0)
+    end
+
+    it "treats a zero burn rate as no risk from usage, not a division error" do
+      account = build(:account, avg_daily_burn: 0)
+
+      expect(account.days_to_zero).to eq(Float::INFINITY)
+    end
+
+    it "flags a past_due account even with plenty of credits remaining" do
+      account = build(:account, status: :past_due, monthly_credit_allowance: 100_000, avg_daily_burn: 10)
+
+      expect(account.at_risk?).to be true
+    end
+
+    it "flags an active account that is about to run dry, even though billing is fine" do
+      account = build(:account, status: :active, monthly_credit_allowance: 100, avg_daily_burn: 50)
+
+      expect(account.days_to_zero).to eq(2.0)
+      expect(account.at_risk?).to be true
+    end
+
+    it "does not flag a healthy active account with plenty of runway" do
+      account = build(:account, status: :active, monthly_credit_allowance: 25_000, avg_daily_burn: 1_140)
+
+      expect(account.at_risk?).to be false
+    end
+  end
+
   describe "database-level constraints (bypassing model validations)" do
     let(:base_attrs) do
       {
