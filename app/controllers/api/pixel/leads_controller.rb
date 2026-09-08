@@ -13,6 +13,8 @@ module Api
           return respond_rejected(duplicate)
         end
 
+        return respond_no_credits if pixel.account.credits_remaining < critical_layers_cost
+
         lead = find_replayable_lead || create_lead!(capture_session)
 
         Verification::Runner.call(lead, async: true)
@@ -38,6 +40,18 @@ module Api
           score: 0.0,
           reasons: [ "Exact duplicate of existing CRM record #{duplicate.crm_id}" ]
         }, status: :ok
+      end
+
+      def critical_layers_cost
+        policy_version = ConsensusPolicy.active_version_for(pixel.account)
+        return 0 unless policy_version
+
+        critical = ConsensusEngine.critical_layers_for(policy_version) & pixel.account.enabled_modules
+        critical.sum { |layer_key| DetectionLayer.cost(layer_key) }
+      end
+
+      def respond_no_credits
+        render json: { error: "Account does not have enough credits to run the required checks" }, status: :payment_required
       end
 
       def find_replayable_lead

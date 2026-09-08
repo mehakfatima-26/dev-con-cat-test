@@ -30,14 +30,9 @@ module Verification
       lead.account
     end
 
-    def consensus_policy
-      ConsensusPolicy.find_by(account: account) || ConsensusPolicy.find_by(account: nil) ||
-        raise("No consensus policy configured for #{account.account_id}, and no global default exists")
-    end
-
     def policy_version
-      consensus_policy.active_policy_version ||
-        raise("#{consensus_policy.name} has no active policy version")
+      ConsensusPolicy.active_version_for(account) ||
+        raise("No active consensus policy version for #{account.account_id}, and no global default exists")
     end
   end
 end

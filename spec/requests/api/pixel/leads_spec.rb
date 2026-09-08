@@ -97,4 +97,40 @@ RSpec.describe "Api::Pixel::Leads" do
 
     expect(JSON.parse(response.body)).not_to have_key("prior_attempts")
   end
+
+  it "refuses with 402 when the account has zero credits remaining, creating nothing at all" do
+    pixel.account.update!(monthly_credit_allowance: 0)
+
+    expect { post_lead }.to change(Lead, :count).by(0)
+      .and change(VerificationRun, :count).by(0)
+      .and change(CreditTransaction, :count).by(0)
+
+    expect(response).to have_http_status(:payment_required)
+  end
+
+  it "refuses with 402 on a positive balance that still can't cover every critical layer -- not just literal zero" do
+    global_policy = ConsensusPolicy.find_by(account: nil)
+    global_policy.update!(active_policy_version: create(:policy_version, consensus_policy: global_policy,
+      rules: {
+        "anura" => { "hard_stop" => { "invalid_traffic_type" => [ "bot" ] } },
+        "trustedform" => { "hard_stop" => { "status" => [ "mismatch" ] } }
+      }))
+    pixel.account.update!(monthly_credit_allowance: 2)
+
+    expect { post_lead }.to change(Lead, :count).by(0)
+
+    expect(response).to have_http_status(:payment_required)
+  end
+
+  it "still proceeds when the balance covers every critical layer, even if not enough for every enabled layer" do
+    global_policy = ConsensusPolicy.find_by(account: nil)
+    global_policy.update!(active_policy_version: create(:policy_version, consensus_policy: global_policy,
+      rules: { "anura" => { "hard_stop" => { "invalid_traffic_type" => [ "bot" ] } } }))
+      
+    pixel.account.update!(monthly_credit_allowance: 3)
+
+    expect { post_lead }.to change(Lead, :count).by(1)
+
+    expect(response).to have_http_status(:created)
+  end
 end

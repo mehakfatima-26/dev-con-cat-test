@@ -48,15 +48,29 @@ RSpec.describe ConsensusEngine do
     end
 
     it "floors at review when a consent-critical layer errored, even with an otherwise clean score" do
+      critical_policy = build(:policy_version,
+        rules: { "trustedform" => { "hard_stop" => { "status" => [ "mismatch", "expired", "not_found" ] } } },
+        thresholds: { "reject" => 0.4, "review" => 0.9 })
       rows = [
         row("trustedform", state: :errored, detail: "trustedform failed: timeout"),
         row("anura", state: :completed, result: :pass, weight: 0.0)
       ]
 
-      result = described_class.call(layer_results: rows, policy_version: policy)
+      result = described_class.call(layer_results: rows, policy_version: critical_policy)
 
       expect(result[:verdict]).to eq("review")
       expect(result[:reason]).to eq("Could not verify trustedform: trustedform failed: timeout")
+    end
+
+    it "treats ANY layer the active policy gives hard-stop rules to as critical, not just a fixed list" do
+      policy_with_anura_critical = build(:policy_version,
+        rules: { "anura" => { "hard_stop" => { "invalid_traffic_type" => [ "bot" ] } } },
+        thresholds: { "reject" => 0.4, "review" => 0.9 })
+      rows = [ row("anura", state: :errored, detail: "anura failed: timeout") ]
+
+      result = described_class.call(layer_results: rows, policy_version: policy_with_anura_critical)
+
+      expect(result[:verdict]).to eq("review")
     end
 
     it "does not float a hard stop up to review just because another layer also errored" do

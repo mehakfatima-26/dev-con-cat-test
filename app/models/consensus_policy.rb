@@ -7,6 +7,10 @@ class ConsensusPolicy < ApplicationRecord
   validates :name, presence: true
   validate :active_version_belongs_to_self
 
+  def self.active_version_for(account)
+    (find_by(account: account) || find_by(account: nil))&.active_policy_version
+  end
+
   private
 
   def active_version_belongs_to_self

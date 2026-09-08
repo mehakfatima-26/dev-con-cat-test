@@ -1,8 +1,11 @@
 class ConsensusEngine
-  CONSENT_CRITICAL_LAYERS = %w[trustedform dnc duplicate_detection].freeze
-
   def self.call(layer_results:, policy_version:)
     new(layer_results: layer_results, policy_version: policy_version).call
+  end
+
+  def self.critical_layers_for(policy_version)
+    hard_stop_layers = policy_version.rules.select { |_key, config| config["hard_stop"].present? }.keys
+    ([ "duplicate_detection" ] + hard_stop_layers).uniq
   end
 
   def initialize(layer_results:, policy_version:)
@@ -34,7 +37,8 @@ class ConsensusEngine
   end
 
   def errored_critical_layers
-    layer_results.select { |r| r.state.to_s == "errored" && CONSENT_CRITICAL_LAYERS.include?(r.layer_key) }
+    critical = self.class.critical_layers_for(policy_version)
+    layer_results.select { |r| r.state.to_s == "errored" && critical.include?(r.layer_key) }
   end
 
   def warn_rows

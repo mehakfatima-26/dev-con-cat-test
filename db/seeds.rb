@@ -19,7 +19,7 @@ ACCOUNTS = {
     origin: "https://medicare-help.example.com"
   },
   "acct_autoinsure" => {
-    company_name: "AutoInsure Direct", plan: :starter, monthly_credit_allowance: 8_000,
+    company_name: "AutoInsure Direct", plan: :starter, monthly_credit_allowance: 35,
     status: :past_due,
     enabled_modules: %w[anura trustedform dnc phone_validation duplicate_detection],
     avg_daily_burn: 410, billing_contact: "founder@autoinsure.example",
