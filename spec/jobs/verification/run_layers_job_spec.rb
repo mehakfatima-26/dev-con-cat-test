@@ -138,4 +138,20 @@ RSpec.describe Verification::RunLayersJob do
     expect(run.verdict).to eq(original_verdict)
     expect(CreditTransaction.where(verification_run: run).count).to eq(charge_count)
   end
+
+  it "self-heals: if an accepted run's certificate was issued but the crash happened before the CrmRecord was created, a retry creates it instead of leaving the lead permanently missing from the CRM" do
+    account = account_with(modules: %w[anura trustedform dnc duplicate_detection])
+    lead = lead_for(account, lead_id: "L-1001")
+    run = Verification::Runner.call(lead, async: false)
+    run.reload
+    expect(run.accept_verdict?).to be true
+    certificate_serial = run.certificate.serial
+
+    CrmRecord.find_by(lead: lead).delete
+
+    described_class.new.perform(run.id)
+
+    expect(CrmRecord.find_by(lead: lead)).to be_present
+    expect(run.reload.certificate.serial).to eq(certificate_serial)
+  end
 end

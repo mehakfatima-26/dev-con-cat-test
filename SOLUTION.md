@@ -17,6 +17,8 @@
 | Linting         | Rubocop (Rails Omakase config)                                            |
 
 
+
+
 ## Folder structure
 
 ```
@@ -50,6 +52,8 @@ public/                       # the same two files, copied here because Rails on
                               # files from public/ (http://localhost:3000/landing-page.html)
 spec/                         # covers test cases
 ```
+
+
 
 ## 1. How to run it
 
@@ -91,6 +95,8 @@ Seeding prints a verdict-vs-hint table for all 12 leads.
 
 
 ---
+
+
 
 ## 2. Data model
 
@@ -220,6 +226,8 @@ erDiagram
 
 ---
 
+
+
 ## 3. Consensus engine
 
 Consensus engine uses layer by layer weights to derive one final verdict per each verification run. In any layer, which signals are hard stops, which are weighted, and how severe each weighted signal is, it is not hardcoded in the code — they're all conditions read from `PolicyVersion#rules` (jsonb), a versioned database record.  
@@ -239,8 +247,6 @@ Consensus engine uses layer by layer weights to derive one final verdict per eac
 | VPN/proxy, phone/email validation, enrichment | —                                                                                                                                                          | always weighted; disagreement between providers is the signal, not any single opinion                                                                                                                         |
 
 
-
-
 **Algorithm**: collect every `completed` layer's signals first (completed layer means layer executed successfully no matter the result i.e, hard stop, weighted, all clear) → check completed layer results → any hard stop → **REJECT** with that stop's reason (even if one layer hits a hard stop, all other layers results are still determined for complete certificate creation for any lead). Otherwise score is computed. `score = 1.0 − Σ(each layer's own weighted contribution)` → If it is below the value of`reject` threshold (0.4) → REJECT; below `review` threshold (0.9) → REVIEW; else ACCEPT. Thresholds and every weight live in `PolicyVersion#rules`/`#thresholds` (jsonb) — **data driven policy, not code**.
 
 **Weights are graded by severity, not flat per layer — how one layer's own contribution is actually computed:**
@@ -257,10 +263,12 @@ So the full picture: **run score = 1.0 − Σ(each completed layer's own severit
 - A **non-critical** layer that errors is currently scored as if it said nothing (fail-open) — a known, documented trade-off, not an oversight (see §10).
 - Running out of credits mid-run is modeled as the *same* `errored` state as a genuine provider failure, so both cases hit the same rule.
 
-**Hard vs soft duplicate, handled differently on purpose**: an exact match (same phone **and** email in this account's CRM) short-circuits the run immediately — REJECT, zero credits spent in this case.   
+**Hard vs soft duplicate, handled differently on purpose**: an exact match (same phone **and** email in this account's CRM) short-circuits the run immediately — REJECT, zero credits spent in this case.  
 A soft match (only one field matches) does **not** short-circuit — the full run still executes, so a human reviewing it has complete context, and it only costs 0.05 of score (L-1012: a soft duplicate with everything else clean still lands ACCEPT). The soft-match weight is currently flat regardless of how recent the matching record is or which field matched — a refinement I'd make next (§10), not built right now.
 
 ---
+
+
 
 ## 4. Multi-tenancy & authorization
 
@@ -268,30 +276,36 @@ Every tenant table carries `account_id`. Every controller reaches records throug
 
 ---
 
+
+
 ## 5. Credits & subscriptions
 
-**A credit is spent per layer actually executed** on a run, not per lead and not per run.   
-Why per-layer: a lead that hits an early hard stop (exact duplicate) does not pay for anything.   
-Charging only happens **after** a layer's adapter completes its execution, never before — so a layer that's skipped/not applicable is never billed for work that didn't happen.   
+**A credit is spent per layer actually executed** on a run, not per lead and not per run.  
+Why per-layer: a lead that hits an early hard stop (exact duplicate) does not pay for anything.  
+Charging only happens **after** a layer's adapter completes its execution, never before — so a layer that's skipped/not applicable is never billed for work that didn't happen.  
 Charging is idempotent (`idempotency_key: "run_id:layer_key"`) so a crash between charging and saving the result never double-charges.
 
 **Out of credits mid-verification — the reasoning behind the final rule:**  
-The first version I implemented simply checked "is the balance above zero." That's not good enough: a balance of 1 credit is technically positive, but starting a run in that state just burns the account's last credit on a run that can't even finish its critical layers (those that have hard stops), leaving an unresolved, wasted charge behind.   
+The first version I implemented simply checked "is the balance above zero." That's not good enough: a balance of 1 credit is technically positive, but starting a run in that state just burns the account's last credit on a run that can't even finish its critical layers (those that have hard stops), leaving an unresolved, wasted charge behind.  
 The rule that I implemented instead: **before creating anything**, sum the cost of every layer this account's active policy treats as critical (hard-stop layers, plus duplicate detection), and refuse with `402` unless the balance covers *all of them*. Nothing is created on refusal — no `Lead`, no `Run`, no charge. We can log these cases in the Activity log though which is not implemented in this version. This strategy is stricter than "balance > 0," because starting a run that'll eventually run out of credits on its most important checks and uses 1 credit for just email verification did not feel right. 
 
 **One known, unfixed edge in this design**: the pre-flight check confirms the balance covers the critical layers' *total* cost only, but layer dispatch order isn't currently sorted to run critical layers first — it runs `duplicate_detection` first, then the rest in whatever order the account's `enabled_modules_snapshot` lists them. So, a non-critical layer dispatched before a critical one could spend down part of the credit first. So, ordering critical layers/preffered layers as per each account's policy rules is an improvement I'd make next here so credits are strictly evaluated based on that order.
 
 ---
 
+
+
 ## 6. Consent certificates
 
-Canonical JSON payload (verdict, score, reasons, retained TrustedForm reference) → SHA-256 → linked to the previous certificate for that account (hash chain) → HMAC-signed. Immutable once issued — no update route, and a model-level `before_update` raises even from the console. Publicly retrievable/verifiable at `/verify/:serial` with no login (a certificate is meant to be handed to a third party to defend a lead), and tamper-evidence: mutating the stored payload, the signature, or the chain link each independently fails verification.
+Canonical JSON payload (verdict, score, reasons, retained TrustedForm reference) → SHA-256 → linked to the previous certificate for that account (hash chain) → HMAC-signed. Immutable once issued — no update route, and a model-level `before_update` raises even from the console. Publicly retrievable/verifiable at `/verify/:serial` with no login (a certificate is meant to be handed to a third party to defend a lead), and tamper-evidence mutating the stored payload, the signature, or the chain link each independently fails verification,
 
 ---
 
+
+
 ## 7. Real-time transport
 
-**SSE (Server-Sent Events) over Redis pub/sub**, not ActionCable/WebSocket, not polling.
+**My choice: SSE (Server-Sent Events) over Redis pub/sub**
 
 
 |                 | SSE (chosen)                                                                    | WebSocket/ActionCable                                                      | Short-polling                                            |
@@ -302,37 +316,54 @@ Canonical JSON payload (verdict, score, reasons, retained TrustedForm reference)
 | Reconnection    | Browser's `EventSource` auto-reconnects natively                                | Needs explicit reconnect handling                                          | N/A (no persistent connection to lose)                   |
 
 
-The pixel only ever needs **server → browser** updates for one lead — it never needs to send anything back over the same channel. WebSocket/ActionCable's bidirectionality buys nothing here and costs a whole extra subsystem (channels, connection identification, broadcast plumbing) for a one-way need. SSE gets free auto-reconnect from the browser and degrades gracefully. Traded away: WebSocket's bidirectional channel (unneeded) and ActionCable's built-in broadcasting helpers (small win, not worth the added machinery for one-way data).
+The pixel only ever needs **server → browser** updates for one lead — it never needs to send anything back over the same channel. WebSocket/ActionCable's bidirectionality buys nothing here and costs a whole extra subsystem (channels, connection identification, broadcast plumbing) for a one-way need. SSE gets free auto-reconnect from the browser and degrades gracefully.  
+Traded away: WebSocket's bidirectional channel (unneeded) and ActionCable's built-in broadcasting helpers (small win, not worth the added machinery for one-way data)
 
 ---
+
+
 
 ## 8. Pixel security
 
 - **Cross-account posting**: the account is resolved server-side from the `Pixel` row looked up by `pixel_id`, **never** trusted from the request body — a forged `account_id` in the payload has no effect. Origin is also checked against that pixel's `allowed_origins` allowlist for `/visit` and `/leads`, where a browser reliably sends a real `Origin` header on a `fetch()` POST.
-- **Abuse/replay**: Rack::Attack rate-limits all three pixel endpoints per IP (`/visit`: 60/min, `/leads`: 10/min, `/activity`: 20/min). The activity stream (`GET /activity`, an `EventSource`) is protected: a plain same-origin `GET` commonly carries no `Origin` header at all (standard browser behavior — a cross-origin `GET`/`EventSource` gets an `Origin` header, since CORS enforcement depends on it). Locally, the demo page and this API share one origin (§1's `DEMO_PIXEL_ORIGIN` note), so that's exactly the case we hit. With no `Origin` sent, `allowed_origin?`'s fallback (`request.headers["Origin"].presence || request.base_url`) can't meaningfully check anything, but it compares the server's own host to itself, which always passes. The real gate on this endpoint is the signed, 1-hour-expiring `Rails.application.message_verifier` token. Without a valid token the stream is refused regardless of origin.
-
+- **Abuse/replay**: Rack::Attack rate-limits all three pixel endpoints per IP (`/visit`: 60/min, `/leads`: 10/min, `/activity`: 20/min). The activity stream (`GET /activity`, an `EventSource`) is protected: a plain **same-origin** `GET` commonly carries **no** `Origin` **header at all** (standard browser behavior — a cross-origin `GET`/`EventSource` gets Origin header, since CORS enforcement depends on it. Locally, the demo page and this API share one origin (§1's `DEMO_PIXEL_ORIGIN` note), so that's exactly the case we hit. With no `Origin` sent, `allowed_origin?`'s fallback (`request.headers["Origin"].presence || request.base_url`) can't meaningfully check anything but it compares the server's own host to itself which always passes.  
+The real gate on this endpoint is the signed, **1-hour-expiring** `Rails.application.message_verifier` token. Without a valid token the stream is refused regardless of origin.
+- **What happens if the server crashes while a layer is running** — `Verification::RunLayersJob` is one Sidekiq job per lead, looping through layers. Sidekiq's default delivery is at-least-once: if the worker process dies mid-job, it isn't lost — Sidekiq retries it. Every crash window in that loop is handled so the retry is safe:
+  1. **Crash mid-layer, before anything is saved** (the adapter is still computing) — nothing was written yet, so the retry just computes that layer fresh. Nothing to undo.
+  2. **Crash after the credit charge, but before the result is saved** — `charge_credits!` checks for an existing `CreditTransaction` by a unique key (`run_id:layer_key`) before creating one, so the retry sees the earlier charge and skips charging again. No double charge.
+  3. **Crash after a layer is fully saved** — `RunLayer#call` finds the existing `LayerResult` and returns immediately without re-running or re-charging that layer; the retry just resumes at the next unfinished one.
+  4. **Crash after all layers finish, before the certificate is issued** — `perform` has a self-heal branch: if the run is already `completed`/`partial` but has no certificate yet, it issues one without redoing any layer work.
+  5. **Crash between the certificate being issued and the CRM record being created** (for an ACCEPT verdict) —  self-heal independently re-checks the CRM record and re-publishes the final verdict too, so a lead can't end up with a certificate but be silently missing from the CRM.
+  6. **Does the browser's live view survive all this?** the browser's `EventSource` auto-reconnects on its own if its connection drops. Separately, our server doesn't rely on the browser having witnessed the original pub/sub messages — every connection (first time or reconnect) immediately replays every already-persisted `LayerResult` straight from the database before doing anything else, so a reconnect always catches up completely regardless of what it missed.
+  
 ---
 
 ## 9. Architecture & boundaries
 
-Controllers only authenticate, authorize, extract params, call one service, and render — no business logic in them. Multi-step orchestration (`ConsensusEngine`, `Verification::Runner`, `Certificates::Issuer`) lives in single-purpose PORO services under `app/services/`, each independently unit-testable without a real request. Models hold validations, associations, and genuinely model-owned behavior (`Account#credits_remaining`) — not a junk drawer of unrelated methods. No `default_scope`, no business logic hidden in callback chains — the flow is traceable by reading the orchestrating service top to bottom, not by hunting `after_save` hooks.
+Controllers only authenticate, authorize, extract params, call one service, and render — no business logic in them. Multi-step orchestration (`ConsensusEngine`, `Verification::Runner`, `Certificates::Issuer`) lives in single-purpose services under `app/services/`, each independently unit-testable without a real request.  
+Models hold validations, associations, and genuinely model-owned behavior (`Account#credits_remaining`). 
 
 ---
+
+
 
 ## 10. What I stubbed, known gaps, and what I'd build next
 
 **Stubbed / cut, and why:**
 
-- **Lead outside the 12 fixtures** — a lead identity outside the 12 fixtures still gets a real `duplicate_detection` check (it's a live database query, not a fixture lookup, so it works for anyone). The other 9 layers need a real vendor call to answer for someone we have no fixture for, which is out of scope here — so those layers land as `errored` for a brand-new identity, and the run floors at REVIEW rather than crashing. Workaround for a live demo: submit one of the 12 known identities.
-- **No persisted activity/audit log.** The real-time stream (Redis pub/sub → SSE) is live and working, but nothing is stored for later review — there's no way to browse "what happened, when" for a lead after the live session ends. The per-layer breakdown on the CRM lead page covers most of the same ground for the engine's side, but the pixel's own side (visit/session events) isn't persisted anywhere.
-- **Manual REVIEW resolution** — an admin/account admin should be able to accept/reject a REVIEW lead; not built yet.
-- **Soft-duplicate scoring is flat** (0.05 regardless of recency or which field matched) — a real refinement (weight the match by how recently the CRM record was created, and by which field) documented but not built.
-- **Errored non-critical layers score as "no signal"** (fail-open) — important checks must work or we pause, small checks can skip if they break. This can be handled in a better way, maybe by assigning some weight to the errored non-critical layers.
-- **Account-specific policy rules / tuning the engine** — adding an option for the account admin to configure policy rules, so we can have a policy version per account with its own preference of layers/weights/acceptance/rejection thresholds. We can also add compound rules for cross-layer checking — for example, if an account decides that both email and phone verification failing together should be a hard stop. This would be treated as a cross-layer validation.
+`**Lead Outside 12 Fixtures**` A lead identity outside the 12 fixtures just checks duplicate detection. As for the rest of the layer results, we would have to make a real call which is out of scope currently.
 
-**First thing I'd build with another week**: account-specific policy rule configuration, and a manual review process for leads sitting in REVIEW state.
+- **No persisted activity/audit log.** The real-time stream (Redis pub/sub → SSE) is live and working but nothing is stored for later review, there's no way to browse "what happened, when" for a lead after the live session ends. The per-layer breakdown on the CRM lead page covers most of the same ground for the engine's side, but the pixel's own side (visit/session events) isn't persisted anywhere. So 
+- **Manual REVIEW resolution** - An admin/account admin should be able to accepting/rejecting a REVIEW lead.
+- **Soft-duplicate scoring is flat** (0.05 regardless of recency or which field matched) — a real refinement (weight the match by how recently the CRM record was created, and by which field) documented but not built.
+- **Errored non-critical layers score as "no signal"** (fail-open), important checks must work or we pause, small checks can skip if they break. This can be handled in a better way by may be assigning some weight to the errored non-critical layers.
+- **Account specific policy rules/ Tuning the engine:**  Adding an option for the account admin to configure policy rules so we can have a policy version per account with it's own preffernce of layers/weights/acceptance/rejection thresholds. We can also add compound rules for cross layer checking, for example, if an account decides that if both email and phone verifications fail, we mark it as a hard stop. This will be treated as a cross layer validation.
+
+**First thing I'd build with another week**: Account specific policy rule configuration, manual review process for the leads in REVIEW state.
 
 ---
+
+
 
 ## 11. Design Questions — index
 

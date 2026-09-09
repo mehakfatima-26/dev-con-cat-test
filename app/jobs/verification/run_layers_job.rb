@@ -6,10 +6,7 @@ module Verification
       run = VerificationRun.find(verification_run_id)
 
       if run.status.in?(%w[completed partial])
-        if run.certificate.blank?
-          certificate = Certificates::Issuer.call(run)
-          Verification::ActivityPublisher.publish_final_verdict(run, certificate)
-        end
+        self_heal(run)
         return
       end
 
@@ -19,6 +16,12 @@ module Verification
     end
 
     private
+
+    def self_heal(run)
+      certificate = run.certificate || Certificates::Issuer.call(run)
+      create_crm_record(run) if run.accept_verdict?
+      Verification::ActivityPublisher.publish_final_verdict(run, certificate)
+    end
 
     def dispatch_all(run)
       layers = [ "duplicate_detection" ] + (run.enabled_modules_snapshot - [ "duplicate_detection" ])
