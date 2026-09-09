@@ -91,6 +91,16 @@
   background: #fef2f2;
 }
 
+.admin-users-cell {
+  white-space: normal;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.admin-muted {
+  color: #9ca3af;
+}
+
 .admin-table tbody tr:hover {
   background: #f9fafb;
 }

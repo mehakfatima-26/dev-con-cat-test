@@ -13,6 +13,7 @@
       <thead>
         <tr>
           <th>Company</th>
+          <th>Users</th>
           <th>Plan</th>
           <th>Status</th>
           <th class="num">Allowance</th>
@@ -27,6 +28,11 @@
         <% @accounts.each do |account| %>
           <tr class="<%= "at-risk" if account.at_risk? %>">
             <td><%= account.company_name %></td>
+            <td class="admin-users-cell">
+              <% account.users.sort_by(&:role).each do |user| %>
+                <div><%= user.name %> <span class="admin-muted">(<%= user.role.titleize %>)</span></div>
+              <% end %>
+            </td>
             <td><%= account.plan.titleize %></td>
             <td><span class="admin-status admin-status--<%= account.status %>"><%= account.status.titleize %></span></td>
             <td class="num"><%= number_with_delimiter(account.monthly_credit_allowance) %></td>

@@ -49,6 +49,23 @@ RSpec.describe "Admin::Dashboard" do
     expect(response).to redirect_to(new_user_session_path)
   end
 
+  it "lists each account's own users, by name and role, for the super_admin" do
+    account = create(:account, company_name: "Acme Leads")
+    create(:user, account: account, name: "Dana Whitfield", role: :account_admin)
+    create(:user, account: account, name: "Luis Fernandez", role: :member)
+
+    sign_in create(:user, :super_admin)
+    get "/admin"
+
+    body = response.body
+    row = body[/<tr[^>]*>(?:(?!<\/tr>).)*Acme Leads.*?<\/tr>/m]
+
+    expect(row).to include("Dana Whitfield")
+    expect(row).to include("Account Admin")
+    expect(row).to include("Luis Fernandez")
+    expect(row).to include("Member")
+  end
+
   it "links out to the all-accounts leads view" do
     sign_in create(:user, :super_admin)
     get "/admin"
