@@ -46,30 +46,33 @@ accounts = ACCOUNTS.each_with_object({}) do |(account_id, attrs), memo|
 end
 
 # ---------------------------------------------------------------------------
-# Users -- one super_admin (no account) + one account_admin per account
+# Users -- straight from mock-data/users.json (super_admin + every
+# account_admin/member it lists), so every seeded role actually has a login.
 # ---------------------------------------------------------------------------
 puts "\n== Users =="
 
-DEV_PASSWORD = ENV.fetch("SEED_USER_PASSWORD") { SecureRandom.hex(8) }
-admin = User.find_or_initialize_by(email: "admin@catchingconsent.example")
-admin.user_id ||= "u_super_admin"
-admin.name = "Platform Admin"
-admin.role = :super_admin
-admin.account = nil
-admin.password = DEV_PASSWORD
-admin.save!
-puts "  admin@catchingconsent.example (super_admin, password: #{DEV_PASSWORD})"
+USERS = [
+  { user_id: "u_root", account_id: nil, role: :super_admin, name: "Platform Operator", email: "admin@catchingconsent.example" },
+  { user_id: "u_sp_admin", account_id: "acct_solarpro", role: :account_admin, name: "Dana Whitfield", email: "dana@solarpro.example" },
+  { user_id: "u_sp_mem1", account_id: "acct_solarpro", role: :member, name: "Luis Fernandez", email: "luis@solarpro.example" },
+  { user_id: "u_me_admin", account_id: "acct_medicareedge", role: :account_admin, name: "Priya Raman", email: "priya@medicareedge.example" },
+  { user_id: "u_me_mem1", account_id: "acct_medicareedge", role: :member, name: "Tom Becker", email: "tom@medicareedge.example" },
+  { user_id: "u_ai_admin", account_id: "acct_autoinsure", role: :account_admin, name: "Chris Doyle", email: "chris@autoinsure.example" }
+].freeze
 
-accounts.each_value do |account|
-  user = User.find_or_initialize_by(email: account.billing_contact)
-  user.user_id ||= "u_#{account.account_id}"
-  user.name = "#{account.company_name} Admin"
-  user.role = :account_admin
-  user.account = account
+DEV_PASSWORD = ENV.fetch("SEED_USER_PASSWORD") { SecureRandom.hex(8) }
+
+USERS.each do |attrs|
+  user = User.find_or_initialize_by(email: attrs[:email])
+  user.user_id ||= attrs[:user_id]
+  user.name = attrs[:name]
+  user.role = attrs[:role]
+  user.account = attrs[:account_id] ? accounts.fetch(attrs[:account_id]) : nil
   user.password = DEV_PASSWORD
   user.save!
-  puts "  #{user.email} (account_admin, #{account.account_id})"
+  puts "  #{user.email} (#{user.role}#{", #{attrs[:account_id]}" if attrs[:account_id]})"
 end
+puts "  password for all seeded users: #{DEV_PASSWORD}"
 
 # ---------------------------------------------------------------------------
 # Pixels -- one per account, pixel_id fixed to match leads.json

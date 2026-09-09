@@ -5,15 +5,13 @@ gem "sprockets-rails"
 gem "pg", "~> 1.1"
 gem "puma", ">= 5.0"
 gem "importmap-rails"
-gem "turbo-rails"
-gem "stimulus-rails"
 gem "redis", "~> 5.0"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "bootsnap", require: false
 
-gem "devise"       
-gem "pundit"       
-gem "sidekiq"      
+gem "devise"
+gem "pundit"
+gem "sidekiq"
 gem "rack-attack"
 gem "rack-cors"
 
