@@ -1,0 +1,53 @@
+<% content_for :title, "Pixel" %>
+
+<div class="pixel-page">
+  <div class="pixel-header">
+    <h1>Your pixel</h1>
+    <span class="pixel-status pixel-status--<%= @pixel.status %>"><%= @pixel.status.titleize %></span>
+  </div>
+
+  <section class="pixel-card">
+    <h2 class="pixel-card-title">Details</h2>
+    <dl class="pixel-dl">
+      <dt>Pixel ID</dt><dd><%= @pixel.pixel_id %></dd>
+      <dt>Name</dt><dd><%= @pixel.name %></dd>
+      <dt>Allowed origins</dt>
+      <dd>
+        <ul class="pixel-origin-list">
+          <% @pixel.allowed_origins.each do |origin| %>
+            <li><%= origin %></li>
+          <% end %>
+        </ul>
+      </dd>
+    </dl>
+  </section>
+
+  <section class="pixel-card">
+    <h2 class="pixel-card-title">Embed snippet</h2>
+    <p class="pixel-form-hint" style="margin-bottom: 12px;">
+      Paste this on your landing page, once, before the closing &lt;/body&gt; tag.
+    </p>
+    <div class="pixel-snippet-wrap">
+      <button type="button" class="pixel-copy-btn" data-copy-target="pixel-snippet-text">Copy</button>
+      <pre class="pixel-snippet" id="pixel-snippet-text"><%= pixel_snippet(@pixel) %></pre>
+    </div>
+  </section>
+</div>
+
+<script>
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-copy-target]");
+    if (!button) return;
+
+    var text = document.getElementById(button.getAttribute("data-copy-target")).textContent;
+    navigator.clipboard.writeText(text).then(function () {
+      var original = button.textContent;
+      button.textContent = "Copied!";
+      button.classList.add("is-copied");
+      setTimeout(function () {
+        button.textContent = original;
+        button.classList.remove("is-copied");
+      }, 1500);
+    });
+  });
+</script>

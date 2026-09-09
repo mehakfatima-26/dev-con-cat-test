@@ -1,0 +1,103 @@
+<% content_for :title, "#{@lead.first_name} #{@lead.last_name} -- #{leads_page_label}" %>
+
+<div class="crm-page">
+  <%= link_to "&larr; Back to #{leads_page_label}".html_safe, leads_path, class: "crm-back-link" %>
+
+  <div class="crm-lead-header">
+    <div>
+      <h1><%= @lead.first_name %> <%= @lead.last_name %></h1>
+      <span class="crm-lead-id"><%= @lead.lead_id %></span>
+    </div>
+    <% if @run %>
+      <span class="<%= verdict_badge_class(@run.verdict) %> badge--lg"><%= @run.verdict.to_s.upcase %></span>
+    <% else %>
+      <span class="badge badge--neutral badge--lg">NO RUN YET</span>
+    <% end %>
+  </div>
+
+  <div class="crm-detail-grid">
+    <section class="crm-card">
+      <h2 class="crm-card-title">Lead details</h2>
+      <dl class="crm-dl">
+        <% if Current.user.super_admin? %>
+          <dt>Account</dt><dd><%= @lead.account.company_name %></dd>
+        <% end %>
+        <dt>Email</dt><dd><%= @lead.email %></dd>
+        <dt>Phone</dt><dd><%= @lead.phone %></dd>
+        <dt>Campaign</dt><dd><%= @lead.campaign.presence || "&mdash;".html_safe %></dd>
+        <dt>Landing page</dt><dd><%= link_to @lead.landing_page_url, @lead.landing_page_url, target: "_blank", rel: "noopener" %></dd>
+        <dt>Captured</dt><dd><%= @lead.captured_at.strftime("%b %-d, %Y %H:%M:%S %Z") %></dd>
+        <dt>Form dwell time</dt><dd><%= @lead.form_dwell_ms %> ms</dd>
+        <dt>IP address</dt><dd><%= @lead.ip_address %></dd>
+        <% if @lead.trusted_form_cert_url.present? %>
+          <dt>TrustedForm cert</dt><dd><%= link_to "View", @lead.trusted_form_cert_url, target: "_blank", rel: "noopener" %></dd>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="crm-card">
+      <h2 class="crm-card-title">Verification run</h2>
+      <% if @run %>
+        <dl class="crm-dl">
+          <dt>Status</dt><dd><%= @run.status.titleize %></dd>
+          <dt>Score</dt><dd><%= number_with_precision(@run.score, precision: 3) if @run.score %></dd>
+          <dt>Reason</dt><dd><%= @run.verdict_reason %></dd>
+          <dt>Credits charged</dt><dd><%= @run.credits_charged %></dd>
+          <dt>Finished</dt><dd><%= @run.finished_at&.strftime("%b %-d, %Y %H:%M:%S %Z") || "&mdash;".html_safe %></dd>
+        </dl>
+        <% if @run.reasons.present? %>
+          <ul class="crm-reasons">
+            <% @run.reasons.each do |reason| %>
+              <li><%= reason %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      <% else %>
+        <p class="crm-muted">This lead has not been through verification yet.</p>
+      <% end %>
+    </section>
+
+    <section class="crm-card">
+      <h2 class="crm-card-title">Certificate</h2>
+      <% if @certificate %>
+        <dl class="crm-dl">
+          <dt>Serial</dt><dd><%= link_to @certificate.serial, verify_certificate_path(serial: @certificate.serial), target: "_blank", rel: "noopener" %></dd>
+          <dt>Issued</dt><dd><%= @certificate.issued_at.strftime("%b %-d, %Y %H:%M:%S %Z") %></dd>
+          <dt>Complete</dt><dd><%= @certificate.incomplete? ? "No -- #{@certificate.incomplete_reason}" : "Yes" %></dd>
+        </dl>
+      <% else %>
+        <p class="crm-muted">No certificate issued yet.</p>
+      <% end %>
+    </section>
+  </div>
+
+  <section class="crm-card crm-layer-card">
+    <h2 class="crm-card-title">Per-layer breakdown</h2>
+    <div class="crm-table-wrap">
+      <table class="crm-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Result</th>
+            <th>Weight</th>
+            <th>Credits</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% DetectionLayer::KEYS.each do |layer_key| %>
+            <% layer_result = @layer_results[layer_key] %>
+            <% charge = @credits_by_layer[layer_key] %>
+            <tr>
+              <td><%= layer_label(layer_key) %></td>
+              <td><span class="<%= layer_state_badge_class(layer_result) %>"><%= layer_state_label(layer_result) %></span></td>
+              <td><%= layer_result&.weight ? number_with_precision(layer_result.weight, precision: 3) : "&mdash;".html_safe %></td>
+              <td><%= charge ? charge.amount.abs : 0 %></td>
+              <td class="crm-detail-cell"><%= layer_result&.detail || "Account has not enabled this module" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

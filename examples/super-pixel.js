@@ -160,7 +160,25 @@
       // Simulation mode: fake the layer-by-layer verification so the demo works.
       if (CONFIG.endpoint) {
         post("/leads", lead).then(function (res) {
-          if (res && res.lead_id) subscribeToActivity(res.lead_id);
+          if (!res) return;
+          if (res.lead_id) {
+            if (res.prior_attempts) {
+              emit({
+                type: "prior_attempts",
+                count: res.prior_attempts.count,
+                verdicts: res.prior_attempts.verdicts,
+              });
+            }
+            subscribeToActivity(res.lead_id, res.stream_token);
+          } else if (res.verdict) {
+            emit({
+              type: "final_verdict",
+              verdict: res.verdict,
+              score: res.score,
+              reasons: res.reasons,
+              certificateSerial: res.certificate_serial,
+            });
+          }
         });
       } else {
         simulateVerification(lead);
@@ -168,13 +186,42 @@
     });
   }
 
-  // Real transport is the candidate's job. This is the shape the page expects:
+  // Real transport: Server-Sent Events against the Rails backend. Emits the
+  // same shape the demo page already consumes:
   //   { type: "layer_result", layer, verdict, detail }
-  //   { type: "final_verdict", verdict, score, reasons }
-  function subscribeToActivity(leadId) {
+  //   { type: "final_verdict", verdict, score, reasons, certificateSerial }
+  function subscribeToActivity(leadId, streamToken) {
     emit({ type: "info", message: "Subscribed to activity for " + leadId });
-    // Candidates: open an SSE/WebSocket/ActionCable channel here and emit()
-    // each "layer_result" as your background jobs complete, then "final_verdict".
+    if (!CONFIG.endpoint || !streamToken) return;
+
+    var url =
+      CONFIG.endpoint.replace(/\/$/, "") +
+      "/leads/" +
+      encodeURIComponent(leadId) +
+      "/activity?token=" +
+      encodeURIComponent(streamToken);
+    var source = new EventSource(url);
+
+    source.addEventListener("layer_result", function (e) {
+      var data = JSON.parse(e.data);
+      emit({ type: "layer_result", layer: data.layer, verdict: data.verdict, detail: data.detail });
+    });
+
+    source.addEventListener("final_verdict", function (e) {
+      var data = JSON.parse(e.data);
+      emit({
+        type: "final_verdict",
+        verdict: data.verdict,
+        score: data.score,
+        reasons: data.reasons,
+        certificateSerial: data.certificate_serial,
+      });
+      source.close();
+    });
+
+    source.onerror = function () {
+      source.close();
+    };
   }
 
   // ---- SIMULATION ONLY (delete once your backend is wired) -----------------

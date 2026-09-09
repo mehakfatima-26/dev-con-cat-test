@@ -1,0 +1,147 @@
+/* Super-admin dashboard */
+
+.admin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+}
+
+.admin-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.admin-view-all-leads {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.admin-view-all-leads:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.admin-section-title {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #fff;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 14px;
+  background: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.admin-table th.num,
+.admin-table td.num {
+  text-align: right;
+}
+
+.admin-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-table tbody tr.at-risk {
+  background: #fef2f2;
+}
+
+.admin-users-cell {
+  white-space: normal;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.admin-muted {
+  color: #9ca3af;
+}
+
+.admin-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.admin-table tbody tr.at-risk:hover {
+  background: #fee2e2;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.admin-badge--risk {
+  background: #dc2626;
+  color: #fff;
+}
+
+.admin-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.admin-status--active {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.admin-status--past_due {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.admin-status--suspended {
+  background: #f3f4f6;
+  color: #4b5563;
+}

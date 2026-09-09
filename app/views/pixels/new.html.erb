@@ -1,0 +1,35 @@
+<% content_for :title, "New Pixel" %>
+
+<div class="pixel-page">
+  <div class="pixel-header">
+    <h1>Create your pixel</h1>
+  </div>
+
+  <section class="pixel-card">
+    <% if @pixel.errors.any? %>
+      <div class="pixel-form-errors">
+        <ul>
+          <% @pixel.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form_for @pixel, url: pixel_path, html: { class: "pixel-form" } do |f| %>
+      <div class="field">
+        <%= f.label :name %>
+        <%= f.text_field :name, placeholder: "e.g. Main Landing Page" %>
+      </div>
+
+      <div class="field">
+        <%= f.label :allowed_origins, "Allowed origins" %>
+        <%= f.text_area :allowed_origins, value: Array(@pixel.allowed_origins).join("\n"),
+              placeholder: "https://your-landing-page.example" %>
+        <p class="pixel-form-hint">One origin per line (or comma-separated). Must match exactly, including https://.</p>
+      </div>
+
+      <%= f.submit "Create pixel", class: "pixel-submit-btn" %>
+    <% end %>
+  </section>
+</div>

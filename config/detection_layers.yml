@@ -1,0 +1,10 @@
+vpn_proxy: 1
+anura: 2
+trustedform: 1
+blacklist_alliance: 2
+dnc: 1
+phone_validation: 3
+email_validation: 2
+enrichment: 4
+duplicate_detection: 1
+voice: 5

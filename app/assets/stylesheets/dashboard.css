@@ -1,0 +1,135 @@
+/* Post-login landing dashboard */
+
+.dash-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dash-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.dash-role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dash-role-badge--super_admin {
+  background: #111827;
+  color: #fff;
+}
+
+.dash-role-badge--account_admin {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.dash-role-badge--member {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.dash-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.dash-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.dash-card-title {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.dash-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.dash-dl dt {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dash-dl dd {
+  margin: 0;
+  color: #111827;
+  text-align: right;
+  font-weight: 600;
+}
+
+.dash-muted {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0 0 28px;
+}
+
+.dash-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.dash-primary-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #4f46e5;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.dash-primary-btn:hover {
+  background: #4338ca;
+}
+
+.dash-secondary-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.dash-secondary-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}

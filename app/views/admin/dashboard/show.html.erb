@@ -1,0 +1,55 @@
+<% content_for :title, "Super Admin" %>
+
+<div class="admin-page">
+  <div class="admin-header">
+    <h1>Super Admin</h1>
+    <%= link_to leads_page_label, leads_path, class: "admin-view-all-leads" %>
+  </div>
+
+  <h2 class="admin-section-title">Accounts</h2>
+
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Users</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th class="num">Allowance</th>
+          <th class="num">Used</th>
+          <th class="num">Remaining</th>
+          <th class="num">Burn/day</th>
+          <th class="num">Days left</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @accounts.each do |account| %>
+          <tr class="<%= "at-risk" if account.at_risk? %>">
+            <td><%= account.company_name %></td>
+            <td class="admin-users-cell">
+              <% account.users.sort_by(&:role).each do |user| %>
+                <div><%= user.name %> <span class="admin-muted">(<%= user.role.titleize %>)</span></div>
+              <% end %>
+            </td>
+            <td><%= account.plan.titleize %></td>
+            <td><span class="admin-status admin-status--<%= account.status %>"><%= account.status.titleize %></span></td>
+            <td class="num"><%= number_with_delimiter(account.monthly_credit_allowance) %></td>
+            <td class="num"><%= number_with_delimiter(account.credits_used_this_cycle) %></td>
+            <td class="num"><%= number_with_delimiter(account.credits_remaining) %></td>
+            <td class="num"><%= number_with_precision(account.avg_daily_burn, precision: 1) %></td>
+            <td class="num">
+              <%= account.days_to_zero.infinite? ? "–" : number_with_precision(account.days_to_zero, precision: 1) %>
+            </td>
+            <td>
+              <% if account.at_risk? %>
+                <span class="admin-badge admin-badge--risk">AT RISK</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

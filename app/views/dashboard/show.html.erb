@@ -1,0 +1,32 @@
+<% content_for :title, "Dashboard" %>
+
+<div class="dash-page">
+  <div class="dash-header">
+    <h1>Welcome back, <%= Current.account.company_name %></h1>
+    <span class="dash-role-badge dash-role-badge--<%= Current.user.role %>"><%= Current.user.role.titleize %></span>
+  </div>
+
+  <div class="dash-card-grid">
+    <section class="dash-card">
+      <h2 class="dash-card-title">Account</h2>
+      <dl class="dash-dl">
+        <dt>Plan</dt><dd><%= Current.account.plan.titleize %></dd>
+        <dt>Status</dt><dd><%= Current.account.status.titleize %></dd>
+      </dl>
+    </section>
+
+    <section class="dash-card">
+      <h2 class="dash-card-title">Credits this cycle</h2>
+      <dl class="dash-dl">
+        <dt>Allowance</dt><dd><%= number_with_delimiter(Current.account.monthly_credit_allowance) %></dd>
+        <dt>Used</dt><dd><%= number_with_delimiter(Current.account.credits_used_this_cycle) %></dd>
+        <dt>Remaining</dt><dd><%= number_with_delimiter(Current.account.credits_remaining) %></dd>
+      </dl>
+    </section>
+  </div>
+
+  <div class="dash-actions">
+    <%= link_to "Go to CRM", leads_path, class: "dash-primary-btn" %>
+    <%= link_to "Manage Pixel", pixel_path, class: "dash-secondary-btn" %>
+  </div>
+</div>
