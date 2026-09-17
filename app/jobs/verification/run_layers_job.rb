@@ -35,6 +35,7 @@ module Verification
         end
 
         result = Verification::RunLayer.new(verification_run: run, layer_key: key).call
+        starved ||= result.errored? && result.detail.to_s.include?("insufficient credits")
 
         if key == "duplicate_detection" && result.result == "fail"
           skip_remaining(run, layers - [ key ])
@@ -57,7 +58,7 @@ module Verification
     end
 
     def insufficient_credits?(run, layer_key)
-      run.lead.account.credits_remaining < DetectionLayer.cost(layer_key)
+      run.lead.account.credits_remaining(excluding_run: run) < DetectionLayer.cost(layer_key)
     end
 
     def finalize(run, starved)

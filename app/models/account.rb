@@ -22,8 +22,8 @@ class Account < ApplicationRecord
     -credit_transactions.where(created_at: cycle_start..cycle_end).sum(:amount)
   end
 
-  def credits_remaining
-    monthly_credit_allowance - credits_used_this_cycle
+  def credits_remaining(excluding_run: nil)
+    monthly_credit_allowance - credits_used_this_cycle - open_reservations(excluding_run)
   end
 
   def avg_daily_burn
@@ -41,6 +41,12 @@ class Account < ApplicationRecord
   end
 
   private
+
+  def open_reservations(excluding_run)
+    scope = VerificationRun.joins(:lead).where(leads: { account_id: id }, status: %w[pending running])
+    scope = scope.where.not(id: excluding_run.id) if excluding_run
+    scope.sum(:credits_reserved)
+  end
 
   def elapsed_cycle_days
     [ ([ Date.current, cycle_end ].compact.min - cycle_start).to_i, 1 ].max

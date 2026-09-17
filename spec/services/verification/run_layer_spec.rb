@@ -390,6 +390,54 @@ RSpec.describe Verification::RunLayer do
     end
   end
 
+  describe "reservation release" do
+    it "releases a critical layer's reservation slice immediately when it errors, while the run is still open" do
+      lead = create(:lead, lead_id: "L-nonexistent")
+      run = create(:verification_run, lead: lead, policy_version: policy_with(bot_hard_stop_rules), credits_reserved: 5)
+
+      described_class.new(verification_run: run, layer_key: "anura").call
+      run.reload
+
+      expect(run.status).to eq("pending") # still open -- the release has to happen before finalize, not because of it
+      expect(run.credits_reserved).to eq(5 - DetectionLayer.cost("anura"))
+    end
+
+    it "also releases a critical layer's slice once it succeeds and gets charged for real, so it's never double-counted against a sibling run" do
+      lead = create(:lead, lead_id: "L-1001")
+      run = create(:verification_run, lead: lead, policy_version: policy_with(bot_hard_stop_rules), credits_reserved: 5)
+
+      described_class.new(verification_run: run, layer_key: "anura").call
+      run.reload
+
+      expect(CreditTransaction.find_by(verification_run: run, layer_key: "anura")).to be_present
+      expect(run.credits_reserved).to eq(5 - DetectionLayer.cost("anura"))
+    end
+
+    it "does not release a second time on a retry of an already-resolved (still-errored) layer" do
+      lead = create(:lead, lead_id: "L-nonexistent")
+      run = create(:verification_run, lead: lead, policy_version: policy_with(bot_hard_stop_rules), credits_reserved: 5)
+
+      described_class.new(verification_run: run, layer_key: "anura").call
+      once_released = run.reload.credits_reserved
+
+      described_class.new(verification_run: run, layer_key: "anura").call
+      run.reload
+
+      expect(run.credits_reserved).to eq(once_released)
+    end
+
+    it "does not touch the reservation for a non-critical layer" do
+      lead = create(:lead, lead_id: "L-1001")
+      non_critical_rules = { "vpn_proxy" => { "weighted" => {} } }
+      run = create(:verification_run, lead: lead, policy_version: policy_with(non_critical_rules), credits_reserved: 5)
+
+      described_class.new(verification_run: run, layer_key: "vpn_proxy").call
+      run.reload
+
+      expect(run.credits_reserved).to eq(5)
+    end
+  end
+
   describe "an unrecognized signal" do
     it "marks the layer warn (not pass) and contributes no weight" do
       # anura is enabled, but the policy defines no rules for it at all --

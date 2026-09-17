@@ -133,4 +133,25 @@ RSpec.describe "Api::Pixel::Leads" do
 
     expect(response).to have_http_status(:created)
   end
+
+  describe "rate limiting" do
+    around do |example|
+      was_enabled = Rack::Attack.enabled
+      Rack::Attack.enabled = true
+      Rack::Attack.reset!
+      example.run
+      Rack::Attack.reset!
+      Rack::Attack.enabled = was_enabled
+    end
+
+    it "throttles after 10 requests per minute from the same IP, with a 429" do
+      10.times { post_lead }
+      expect(response).not_to have_http_status(:too_many_requests)
+
+      post_lead
+
+      expect(response).to have_http_status(:too_many_requests)
+      expect(JSON.parse(response.body)["error"]).to eq("rate limited")
+    end
+  end
 end
