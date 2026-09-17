@@ -17,7 +17,7 @@ module Api
 
         lead = find_replayable_lead || create_lead!(capture_session)
 
-        Verification::Runner.call(lead, async: true)
+        return respond_no_credits unless Verification::Runner.call(lead, async: true)
 
         respond_with(lead, status: :created)
       end
@@ -43,11 +43,9 @@ module Api
       end
 
       def critical_layers_cost
-        policy_version = ConsensusPolicy.active_version_for(pixel.account)
-        return 0 unless policy_version
-
-        critical = ConsensusEngine.critical_layers_for(policy_version) & pixel.account.enabled_modules
-        critical.sum { |layer_key| DetectionLayer.cost(layer_key) }
+        ConsensusEngine.critical_layers_cost_for(
+          account: pixel.account, policy_version: ConsensusPolicy.active_version_for(pixel.account)
+        )
       end
 
       def respond_no_credits

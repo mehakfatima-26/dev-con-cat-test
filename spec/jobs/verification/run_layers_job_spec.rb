@@ -94,7 +94,7 @@ RSpec.describe Verification::RunLayersJob do
   end
 
   it "goes partial and floors the verdict at review when credits run out mid-loop, with an incomplete certificate" do
-    account = account_with(modules: %w[duplicate_detection anura trustedform], allowance: 1)
+    account = account_with(modules: %w[duplicate_detection anura trustedform vpn_proxy], allowance: 4)
     lead = lead_for(account, lead_id: "L-1001")
 
     run = Verification::Runner.call(lead, async: false)
@@ -103,11 +103,20 @@ RSpec.describe Verification::RunLayersJob do
     expect(run.status).to eq("partial")
     expect(run.review_verdict?).to be true
     expect(run.layer_results.find_by(layer_key: "duplicate_detection").state).to eq("completed")
-    expect(run.layer_results.find_by(layer_key: "anura").state).to eq("errored")
-    expect(run.layer_results.find_by(layer_key: "trustedform").state).to eq("errored")
+    expect(run.layer_results.find_by(layer_key: "anura").state).to eq("completed")
+    expect(run.layer_results.find_by(layer_key: "trustedform").state).to eq("completed")
+    expect(run.layer_results.find_by(layer_key: "vpn_proxy").state).to eq("errored")
     expect(CrmRecord.find_by(lead: lead)).to be_nil
     expect(run.certificate.incomplete?).to be true
-    expect(run.certificate.incomplete_reason).to include("anura").and include("trustedform")
+    expect(run.certificate.incomplete_reason).to include("vpn_proxy")
+  end
+
+  it "refuses to even start a run when the account can't afford its own critical layers" do
+    account = account_with(modules: %w[duplicate_detection anura trustedform], allowance: 1)
+    lead = lead_for(account, lead_id: "L-1001")
+
+    expect(Verification::Runner.call(lead, async: false)).to be_nil
+    expect(lead.verification_runs).to be_empty
   end
 
   it "is retry-safe: reprocessing an already-completed run is a no-op" do

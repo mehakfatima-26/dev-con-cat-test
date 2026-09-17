@@ -8,6 +8,13 @@ class ConsensusEngine
     ([ "duplicate_detection" ] + hard_stop_layers).uniq
   end
 
+  def self.critical_layers_cost_for(account:, policy_version:)
+    return 0 unless policy_version
+
+    critical = critical_layers_for(policy_version) & account.enabled_modules
+    critical.sum { |layer_key| DetectionLayer.cost(layer_key) }
+  end
+
   def initialize(layer_results:, policy_version:)
     @layer_results = layer_results.reject { |r| r.state.to_s == "skipped" }
     @policy_version = policy_version

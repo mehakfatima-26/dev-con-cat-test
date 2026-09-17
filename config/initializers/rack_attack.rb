@@ -1,4 +1,8 @@
 class Rack::Attack
+  self.cache.store = Redis.new(url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"))
+
+  self.enabled = !Rails.env.test?
+
   throttle("pixel/visit/ip", limit: 60, period: 1.minute) do |req|
     req.ip if req.path == "/api/pixel/visit" && req.post?
   end
